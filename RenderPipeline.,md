@@ -1,0 +1,557 @@
+# Render Pipeline
+
+## Pipeline Process
+
+基于SRP与Deferred Render Pipeline完成设计，管线中含有多个Pass
+
+ClusterLightingPass->ShadowCastingPass->GBufferPass->ShadowMapping Pass->Lighting Pass->Post Process Pass
+
+* ClusterLighting Pass
+
+划分摄像机区域为多个Cluster，计算出影响该Cluster的光源
+
+![image-20231128150756733](RenderPipeline.assets/image-20231128150756733.png)
+
+* ShadowCastingPass
+
+基于CSM方法，在该Pass中生成视锥分割后不同区域的深度图*
+
+* GBufferPass
+
+延迟渲染，将屏幕空间对应的信息写入到GBuffer中。
+
+* ShadowMappingPass
+
+根据ShadowCastingPass生成的深度图，在屏幕空间生成一张阴影强度图，尺寸与屏幕空间大小相同，在光照Pass中直接采样即可。
+
+* Lighting Pass
+
+完成光照计算。
+
+* PostProcess Pass
+
+后处理计算
+
+## PBR  + IBL
+
+采用MR工作流方式的PBR，GBuffer分配方式如下所示：
+
+![image-20231128151259832](RenderPipeline.assets/image-20231128151259832.png)
+
+根据上述格式完成数据的压缩，在光照Pass也是按照这种方式完成提取。
+
+基于图像的光照（Image Based Lighting，IBL）是一种实时、快速的间接光照解决方案。通常用一张 .hdr 格式的立方体贴图来表示环境的辐射度：
+
+![image-20231128151519625](RenderPipeline.assets/image-20231128151519625.png)
+
+IBL分为漫反射和镜面反射两部分，对于漫反射 BRDF 为常数，积分结果只取决于法向量 n 故可以离线建立查找表。对 n 的每个不同取值，穷举 wi 进行积分并将结果存 CubeMap，熟悉光线追踪的话不难理解这个过程。在实时计算时给定表面法线 n，用 n 去查 CubeMap 即可获得漫反射颜色。预积分的漫反射查找表如下：
+
+![image-20231128151505377](RenderPipeline.assets/image-20231128151505377.png)
+
+对于镜面反射则稍微复杂一些，因为积分的结果不仅和法向量 n 有关，还和视线方向 v 有关。穷举两个向量的组合建立查找表代价过大，因此采用近似的方案。积分被分为环境辐射度和 BRDF 两部分：
+
+![image-20231128151646413](RenderPipeline.assets/image-20231128151646413.png)
+
+第一个预积分和漫反射类似。不同的是漫反射随机发射光线，而这里使用粗糙度进行重要性采样生成光线方向。穷举不同的粗糙度进行预积分，并且把积分结果按照粗糙度存到不同 Level 的 Mipmap 中。实时计算时根据粗糙度映射一个 LOD，取最接近的两个 Mip Level 进行采样，然后在两个结果中插值得到最终的结果。预积分的镜面反射查找表如下：
+
+![image-20231128151731665](RenderPipeline.assets/image-20231128151731665.png)
+
+而第二个积分稍微复杂。因为 BRDF 和粗糙度、N、V、L 都有关，需要用到一些技巧。首先将菲涅尔项 F 用 Schlick Fresnel 近似替换，并且约掉分子分母中的 n*wi,得到，
+
+![image-20231128152036550](RenderPipeline.assets/image-20231128152036550.png)
+
+因为F0是常数可以提取出来，这样一来对BRDF的积分变换为k*F0 + b的变换，计算出两个积分的值，同样采用重要性采样生成光线。
+
+![image-20231128152159947](RenderPipeline.assets/image-20231128152159947.png)
+
+现在积分取决于 V，NdotL 和粗糙度，一种可取但是内存开销较大的方案是使用 3D 查找表。更加贪婪的方案是令 N=V=R 从而移除视线方向 V 的因素。因为镜面反射的波瓣在大多数角度都是各向同性的，仅仅在掠视的时候呈各向异性：
+
+![image-20231128152224344](RenderPipeline.assets/image-20231128152224344.png)
+
+在大多数情况下这种近似带来的性能提升远大于它的 Artifact，现在仅需要两个参数就可以建立 2D 查找表。用 NdotV 和 roughness 做 uv 采样 LUT 的 RG 通道就能得到两个积分的值：
+
+![image-20231128152254339](RenderPipeline.assets/image-20231128152254339.png)
+
+将Diffuse IBL 、Diffuse IBL与BRDF Lut暴露在界面中供直接拖动选择，
+
+![image-20231128152505783](RenderPipeline.assets/image-20231128152505783.png)
+
+在IBL计算的时候，根据roughness采样LOD层级的时候，采用unity的映射方式,
+
+![image-20231128153051463](RenderPipeline.assets/image-20231128153051463.png)
+$$
+rgh = roughness*(1.7-0.7*roughness)
+$$
+
+
+```cpp
+    // 镜面反射
+    float rgh = roughness * (1.7 - 0.7 * roughness);
+    float lod = 6.0 * rgh;  // Unity 默认 6 级 mipmap
+    float3 IBLs = texCUBElod(_specularIBL, float4(R, lod)).rgb;
+    float2 brdf = tex2D(_brdfLut, float2(NdotV, roughness)).rg;
+```
+
+
+
+## CSM
+
+级联阴影贴图（Cascaded Shadow Mapping，CSM）是一种沿用层次细节（Level Of Detail，LOD）思想解决传统 Shadow Mapping 在大场景中阴影贴图精度问题的技术。对于枪战游戏或者沙盒生存等大型游戏场景，最直接的做法是使用一张巨大的阴影贴图覆盖整个场景。阴影贴图的尺寸过大会增加 GPU 性能开销，降低尺寸虽然能够保证阴影贴图覆盖场景，但是因为屏幕空间的多个像素共享阴影贴图中的同一个深度值所以会产生锯齿：
+
+![image-20231128162424980](RenderPipeline.assets/image-20231128162424980.png)
+
+CSM 为不同距离的物体绘制不同精细程度的阴影贴图。对于透视相机而言，近处的物体占据了大多数屏幕像素所以它们理应得到更加精细的阴影贴图。相较而言远处的物体则可以使用廉价的阴影贴图，因为远处的物体也没占几个屏幕像素，所以随便画画差不多得了。如图是一个典型的使用级联阴影贴图的场景，和三个不同层级的阴影贴图：
+
+![image-20231128162447186](RenderPipeline.assets/image-20231128162447186.png)
+
+* 视锥体划分
+
+实现 CSM 算法的第一步是将场景按照远近进行划分。一种直观的方法是按照主相机深度（Z）方向进行划分，四个子视锥体的占比分别是 `0.07f, 0.13f, 0.25f, 0.55f`，得到若干子视锥体：
+
+
+
+![image-20231128163115630](RenderPipeline.assets/image-20231128163115630.png)
+
+每个子视锥体都是一个子场景，所以我们的每一级 Shadow Map 都要至少覆盖整个视锥体。一种粗暴的方法是设置全局统一的阴影相机，但是为了充分利用宝贵的深度图我们希望找到包含主相机视锥体的最小区域。阴影相机通常使用正交投影，正交投影的视野范围是长方体故不难想到通过 AABB 盒子来包围：
+
+![image-20231128163530306](RenderPipeline.assets/image-20231128163530306.png)
+
+每个 AABB 盒子代表一个正交投影的阴影相机的可视范围（事实上相机的 Near Plane 和 Far Plane 要大于 Box 以渲染场景外物体的深度）并且每个 **盒子要和光源方向平行** 以实现正交投影，计算包围盒思路
+
+* 将划分的视锥体转换到光源空间求出来AABB 包围盒，再转换到世界空间中求出对应的AABB包围盒
+* 接下来就要生成深度贴图，可以将相机设置到AABB Box的中点，相机朝向为光源方向，调整正交投影远近截面为正负distance，同时设置正交投影的宽高比，生成四张深度图。
+* 最终再ShadowMap Pass中根据depth值，查看去哪个深度图采样。
+
+这里面还有一些抖动问题：
+
+* 相机的平移抖动，在移动的时候，对场景的同一个三角形采样出来的深度图不一样，我们可以通过控制每次偏移的距离来解决这个问题，保证每次偏移都是深度图 空间长度/resolution的整数倍
+
+```c#
+// 计算 Box 中点, 宽高比
+Vector3 center = (box[3] + box[4]) / 2;
+float w = Vector3.Magnitude(box[0] - box[4]);
+float h = Vector3.Magnitude(box[0] - box[2]);
+//float len = Mathf.Max(h, w);
+float len = Vector3.Magnitude(f_far[2] - f_near[0]);
+float disPerPix = len / resolution;
+
+Matrix4x4 toShadowViewInv = Matrix4x4.LookAt(Vector3.zero, lightDir, Vector3.up);
+Matrix4x4 toShadowView = toShadowViewInv.inverse;
+
+// 相机坐标旋转到光源坐标系下取整
+center = matTransform(toShadowView, center, 1.0f);
+for (int i = 0; i < 3; i++)
+    center[i] = Mathf.Floor(center[i] / disPerPix) * disPerPix;
+center = matTransform(toShadowViewInv, center, 1.0f);
+```
+
+* 相机的旋转抖动
+
+在旋转的时候相机的包围盒长宽时刻在变化，单张阴影贴图能覆盖的面积也不断变换，自然造成了生成图像的走样：
+
+![image-20231128165425079](RenderPipeline.assets/image-20231128165425079.png)
+
+
+
+因为我们的包围盒设定上就是要严密包围视锥体，所以对旋转变换比较敏感。可以粗暴的将主相机子视锥体（梯形台）的长对角线作为包围盒的宽高，因为只要主相机参数和 CSM 划分参数不变那么长对角线就不会变，况且包围盒最长不会超过长对角线。
+
+这样一来能够保证正交投影视锥体的宽高和主相机旋转无关。这么做虽然损失一些阴影贴图的精度但仍是合理的交换，况且低精度的 Shadow Map 我们有各种 trick 来料理它。再次修改 CSM.ConfigCameraToShadowSpace 函数，首先取得当前 level 的子视锥体（梯形台）然后计算长对角线。
+
+## PCSS
+
+
+
+## Cluster Based Deferred Light
+
+分簇延时光照是一种流行的光照计算优化策略，允许海量的同屏光照，CBDL将相机视锥体分为了多簇，并为每簇分配若干的有效光源，可以避免大量的无效光照计算，分簇光照分为两步，预处理和着色。
+
+* 预处理阶段
+  * 分割相机视锥体，生成若干个Cluster
+  * 对于每个Cluster，便利所有光源求焦点，得到影响该cluster的有效光源列表
+* 着色阶段
+  * 根据像素坐标生成该像素所属的Cluster，遍历该cluster的"有效光源列表"，逐一计算光照，每个光源操作是相同的，知识簇和光源的数据不同，符合SIMD并行思想，使用Compute Shader并行进行分簇和光源分配
+
+准备了四个Buffer，分别存放Cluster信息表(世界坐标八个点的坐标)，光源信息表，光源分配结果表以及光源分配索引表，所有Buffer都是一维的，使用的时候根据compute shader thread id三维坐标转换为一维坐标再读取数据
+
+![image-20231128154553347](RenderPipeline.assets/image-20231128154553347.png)
+
+光源分配索引表（assignTable）中每个元素对应一个 Cluster，每个元素存储了 start 和 count，表示该 Cluster 受到哪些光源的影响。
+
+在光源分配结果表（lightAssignBuffer）的 [start, start+count) 区间存储的是这些光源的 id，即光源在 lightBuffer 中的下标，所以光源分配结果表以 sizeof uint 为 stride
+
+具体的索引过程如下。首先通过 Cluster ID 查 assignTable，然后遍历 lightAssignBuffer 获取灯光 ID，再根据灯光 ID 查 lightBuffer 获取灯光信息：
+
+![image-20231128154709274](RenderPipeline.assets/image-20231128154709274.png)
+
+* 分簇
+
+  每一个簇都可以用粗暴的8个点表示
+
+![image-20231128155149549](RenderPipeline.assets/image-20231128155149549.png)
+
+
+
+分割方法如下。这里通过 SV_GroupThreadID 得到 Cluster 的 xy 索引，通过 SV_GroupID 得到 z 方向的索引，组成三维 Cluster ID，用（i，j，k）表示。然后：
+
+1. 通过 i、j 得到 NDC 空间下该 Cluster 的 xy 二维 Rect
+2. 分别用 0 和 1 做深度，将 Rect 反投影得到世界空间下近、远截面的梯形台
+3. 通过 k 对梯形台进行切分，截取我们要的第 k 级 cluster
+4. 将结果保存到 Compute Buffer
+
+步骤比较简单，但我的语言表达能力捉急，于是大概流程图如下：
+
+![image-20231128155235852](RenderPipeline.assets/image-20231128155235852.png)
+
+分簇结果绘制出来大概是这样：
+
+![image-20231128155306108](RenderPipeline.assets/image-20231128155306108.png)
+
+* 传递光源信息
+
+Compute buffer允许用户使用SetDada在CPU端设置数据。在每一帧通过Resources.FindObjectsOfType 获取全部的光源列表，然后更新光源信息到 Buffer，同时向 Shader 传递有效的光源数量。
+
+```cpp
+public void UpdateLightBuffer(Light[] lights) {
+    PointLight[] plights = new PointLight[maxNumLights];
+    int cnt = 0;
+    for (int i = 0; i < lights.Length; ++i) {
+        if (lights[i].type != LightType.Point) {
+            continue;
+        }
+        PointLight pl;
+        pl.color = new Vector3(lights[i].color.r, lights[i].color.g, lights[i].color.b);
+        pl.intensity = lights[i].intensity;
+        pl.position = lights[i].transform.position;
+        pl.radius = lights[i].range;
+        plights[cnt++] = pl;
+    }
+    lightBuffer.SetData(plights);
+
+    //传递光源数量
+    lightAssignCS.SetInt("_numLights", cnt);
+}
+```
+
+也可以使用 Unity SRP API 提供的裁剪方法对视锥体外的光源进行裁剪，传递裁剪过后的光源列表能有效提高后续求交操作的效率。注意这里裁剪之后返回的是 VisuableLight 而不是 Light 对象，要重载多一个方法：
+
+```cpp
+public void UpdateLightBuffer(VisibleLight[] lights)
+{
+    PointLight[] plights = new PointLight[maxNumLights];
+    int cnt = 0;
+    for (int i = 0; i < lights.Length; ++i)
+    {
+        var vl = lights[i].light;
+        if (vl.type != LightType.Point)
+        {
+            continue;
+        }
+        PointLight pl;
+        pl.color = new Vector3(vl.color.r, vl.color.g, vl.color.b);
+        pl.intensity = vl.intensity;
+        pl.position = vl.transform.position;
+        pl.radius = vl.range;
+        plights[cnt++] = pl;
+    }
+    lightBuffer.SetData(plights);
+
+    //传递光源数量
+    lightAssignCS.SetInt("_numLights", cnt);
+}
+```
+
+* 光源求交计算
+
+这部分计算也是有Compute Shader承担，求交判断box的八个点在不在球的内部，只要有一个点在，就记录到该Cluster对应的结果存放表中
+
+```cpp
+[numthreads(16,16,1)]
+void LightAssign(
+    uint3 gtid : SV_GROUPTHREADID,
+    uint3 gid : SV_GROUPID)
+{
+    // cluster ID
+    uint i = gtid.x, j = gtid.y, k = gid.x;
+    uint3 cluster_3D = uint3(i, j, k);
+    uint clusterId_1D = Index3DTo1D(cluster_3D);
+
+    ClusterBox box = _clusterBuffer[clusterId_1D];
+
+    //in _lightAssignBuffer's  index
+    uint startIndex = clusterId_1D * _maxNumLightsPerCluster;
+    uint endIndex = startIndex;
+
+    //search the intersect with the light
+    for(int lid = 0; lid < _numLights; ++lid){
+        PointLight pl = _lightBuffer[lid];
+        if(ClusterLightIntersect(box, pl)){
+            _lightAssignBuffer[endIndex++] = uint(lid);
+        }
+    }
+
+    //write the res
+    LightIndex idx;
+    idx.count = endIndex - startIndex;
+    idx.start = startIndex;
+    _assignTable[clusterId_1D] = idx;
+}
+```
+
+* 光照计算的应用
+
+根据像素位置求出所在的clusterID，根据光照结果计算表求出在该Cluster下，光照的贡献结果，点源衰减计算套取了一个衰减公式：
+
+![image-20231128161047635](RenderPipeline.assets/image-20231128161047635.png)
+
+```cpp
+//计算Cluster Based Lighting
+uint x = floor(uv.x * _numClusterX);
+uint y = floor(uv.y * _numClusterY);
+uint z = floor((1 - d_lin) * _numClusterZ); //z是反的 dx
+
+uint3 clusterId_3D = uint3(x, y, z);
+uint clusterId_1D = Index3DTo1D(clusterId_3D);
+LightIndex lightIndex = _assignTable[clusterId_1D];
+
+int start = lightIndex.start;
+int end = lightIndex.start + lightIndex.count;
+for(int j = start; j < end; ++j){
+    uint lightId = _lightAssignBuffer[j]; //灯光ID
+    PointLight lit = _lightBuffer[lightId]; //根据id查找灯光表
+
+    L = normalize(lit.position - worldPos.xyz);
+    radiance = lit.color;
+
+    //灯光衰减
+    float dis = distance(lit.position, worldPos.xyz);
+    float d2 = dis * dis;
+    float r2 = lit.radius * lit.radius;
+    float dying = saturate(1 - (d2 / r2) * (d2 / r2));
+    dying *= dying;
+
+    color += PBR(N, V, L, albedo, radiance, roughness, metallic) * lit.intensity * dying;
+}
+```
+
+## Hiz
+
+
+
+# Bloom
+
+高质量Bloom实现：
+
+高质量泛光的特点
+
+* 发光物边缘向外扩张足够大
+* 发光物体中心足够量
+* 该亮的地方要亮，不该亮的地方不能亮
+
+![image-20231128213700040](RenderPipeline.assets/image-20231128213700040.png)
+
+![image-20231128213710411](RenderPipeline.assets/image-20231128213710411.png)
+
+做的拉的：与之对应的，放一组（我认为）效果比较一般的泛光。如果该亮的地方不够亮，不该亮的地方亮了，那么很容易产生场景的 “模糊” 感：
+
+![image-20231128213731816](RenderPipeline.assets/image-20231128213731816.png)
+
+![image-20231128213747866](RenderPipeline.assets/image-20231128213747866.png)
+
+像素越亮，它能扩散的距离就越远。这意味着单个高亮像素也能扩散出很大的范围。
+
+## 快速大范围模糊
+
+模糊滤波的本质是查询 kernal 范围内的所有像素并加权平均，即范围查询问题。在计算机图形学中实现快速范围查询，通常会请到老朋友 Mipmap 出场。Mipmap 将图像大小依次折半形成金字塔，mip[i] 中的单个像素代表了 mip[i-1] 中的 2x2 像素块均值，也代表 mip[i-2] 中的 4x4 像素块均值：
+
+![image-20231128213953597](RenderPipeline.assets/image-20231128213953597.png)
+
+为了获得更加圆滑的模糊我们需要选用更高级的 blur kernel，高斯模糊是一个不错的选择。一个 5x5，标准差为 1 的高斯模糊就足够好了。这里我选择手动计算高斯滤波盒的权重，通常来说使用预计算的 2D 数组会加快计算速度：
+
+```cpp
+float GaussWeight2D(float x, float y, float sigma){
+    float PI = 3.14159265358;
+    float E = 2.71828182846;
+    float sigma_2 = pow(sigma, 2);
+
+    float a = -(x * x + y * y) / (2.0 * sigma_2);
+    return pow(E, a) / (2.0 * PI * sigma_2);
+}
+
+float3 GaussNxN(sampler2D tex, float2 uv, int n, float2 stride, float sigma){
+    float3 color = float3(0.0f, 0.0f, 0.0f);
+    int r = n / 2;
+    float weight = 0.0f;
+    for(int i = -r; i<= r; ++i){
+        for(int j = -r; j <= r; ++j){
+            float w = GaussWeight2D(i, j, sigma);
+            float2 coord = uv + float2(i, j) * stride;
+            color += tex2D(tex, coord).rgb * w;
+            weight += w;
+        }
+    }
+    color /= weight;
+    return color;
+}
+
+fixed4 frag (v2f i) : SV_Target
+{
+    float4 color = float4(0, 0, 0, 1);
+    float2 uv = i.uv;
+    float2 stride = _MainTex_TexelSize.xy; //上一级得纹理的texel size
+
+    color.rgb = GaussNxN(_MainTex, uv, _downSampleBlurSize,
+                         stride, _downSampleBlurSigma);
+    return color;
+}
+```
+
+## **描绘中心高亮区域**
+
+使用下采样生成大范围的模糊仅仅是第一步，直接将最高层级 mip 叠加到图像上虽然能够产生足够大的光晕扩散，但是发光物的中心区域不够明亮。此外，发光物和泛光之间没有过度而是直接跳变，从高亮区域跳到低亮度区域显得非常不自然：
+
+![image-20231128214131996](RenderPipeline.assets/image-20231128214131996.png)
+
+不管使用何种滤波器，本质上都是在做加权平均。只要一平均，就有人拖后腿！每次模糊都会降低源图像的亮度，并将这些亮度分摊到周围的纹理。边缘的跳变来自于高层级 mip 和原图之间亮度差距过大：
+
+![image-20231128214215121](RenderPipeline.assets/image-20231128214215121.png)
+
+为了实现发光物和最高层 mip 之间的过渡，我们需要叠加所有的 mip 层级到原图上。因为 mip[i] 是基于 mip[i-1] 进行计算的，相邻层级之间相对连续则不会产生跳变：
+
+![image-20231128214230375](RenderPipeline.assets/image-20231128214230375.png)
+
+较低的 mip 层级模糊范围小且亮度高，主要负责发光物中心的高亮，较高的 mip 层级模糊范围大且亮度低，主要负责发光物边缘的泛光。叠加所有的 mipmap 就能同时达到高质量泛光的两个要求，即够亮与够大：
+
+![image-20231128214252927](RenderPipeline.assets/image-20231128214252927.png)
+
+## **处理方块图样**
+
+因为我们直接从 mipmap 链中采样到全分辨率，很难免会出现方块状的 pattern，因为最高级别的 mip 分辨率小到个位数：
+
+![image-20231128214325717](RenderPipeline.assets/image-20231128214325717.png)
+
+可以通过模糊滤波来解决方块图样。值得注意的是不能直接对小分辨率的高阶 mip 进行滤波，因为分辨率太小，不管怎么滤波，上采样到 full resolution 的时候都会有方块。除非滤波发生在高分辨率纹理
+
+但是高分辨率纹理上一大块区域都对应低分辨率 mip 上的同一个 texel，如果 kernal 不够大那么做 filter 的时候查询的值都是同一个 texel，这意味着在高分辨率纹理上要使用超大的滤波盒才能消除这些方块。下图很好的说明了这一点：
+
+![image-20231128214345975](RenderPipeline.assets/image-20231128214345975.png)
+
+问题又回到了如何使用廉价的小尺寸滤波盒实现大范围模糊的问题。和下采样时类似，采样逐级递进的方式对低分辨率的 mip 链进行上采样。将 mip[i] 上采样到 mip[i-1]，再和 mip[i-1] 本身叠加得到新的 mip[i-1]，这种策略在 [使命召唤 11 的 GDC 分享中](https://link.zhihu.com/?target=http%3A//www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare) 被提出：
+
+![image-20231128214444385](RenderPipeline.assets/image-20231128214444385.png)
+
+进行这个操作需要额外创建一组 RenderTexture，下面是下采样 mip 链（RT_BloomDown）和上采样 mip 链（RT_BloomUp）之间的数据倒腾关系，以 964x460 分辨率和 N=7 次为例：
+
+![image-20231128214503487](RenderPipeline.assets/image-20231128214503487.png)
+
+## **方法总结**
+
+首先为了实现快速模糊，使用mipmap降级高斯模糊完成，将每一级别的mipmap进行累加，低级别的mipmap负责中心高亮区域，高级mipmap负责边缘发散，完成后会发现有一些条纹状的pattern，这是高级别的mipmap level直接放大到了屏幕级别分辨率带来的问题，因此可以考虑模糊解决，参考了使用召唤中解决bloom的问题，完成上采样，上采样的输入是将采样得到的上一级mipmap与这一级的mipmap，分别进行模糊，并累加得到最终的结果，最终实现了高质量的bloom效果。
+
+# PRTGI
+
+
+
+## Games202理论
+
+# OpenGL 模拟水流
+
+可以试想下，相机在水面以上，
+
+反射效果：通过过在水面上方可以看到水面下方，水面以上物体（天空盒）会被水面反射看到；
+
+折射效果：通过过在水面上方可以看到水面下方，可以看到水面下面的网格地面。
+
+实现方式如下：从场景中多个视角渲染多个缓冲区，然后使用帧缓冲区中的结果作为纹理，融合到ADS光照水面。
+
+* **反射效果实现**
+
+![image-20231129194313376](RenderPipeline.assets/image-20231129194313376.png)
+
+反射纹理：反射相机与主相机在y轴的相反位置，同时反射相机向X轴方向倾斜，倾斜角度为主相机相反的倾斜角度。我们从反射相机的角度进行渲染，只渲染水面以上的物体（天空盒），最终渲染结果颜色对应Y坐标需要反转(1.0-tex.y)，不渲染水面底部及顶部纹理。
+
+* **折射效果实现**
+
+折射相机与主相机在相同位置，具有相同角度。使用和主相机相同的视图矩阵，折射纹理便是通过折射相机进行渲染，渲染透过水面可以看到的物体，（比如水底棋盘格）。
+
+* **加一些扰动**
+
+在采样reflect与refract texture的时候，利用dudv纹理加入一些扰动，让结果看起来更加真实
+
+```cpp
+// Apply offset to the sampled coords for the refracted & reflected texture
+vec2 distortion;
+
+
+vec2 totalDistortion;
+if (clearWater) {
+    distortion = vec2(0.0, 0.0);
+    totalDistortion = vec2(0.0, 0.0);
+}
+else {
+    distortion = (texture(dudvWaveTexture, vec2(planeTexCoords.x + waveMoveFactor, planeTexCoords.y)).rg * 2.0 - 1.0) * 0.1; // Unpack the dudv map
+    distortion = planeTexCoords + vec2(distortion.x, distortion.y + waveMoveFactor);
+    totalDistortion = (texture(dudvWaveTexture, distortion).rg * 2.0 - 1.0) * waveStrength * dampeningEffect; // Unpack the dudv map and multiply by strength
+}
+reflectCoords += totalDistortion;
+reflectCoords = clamp(reflectCoords, 0.0, 1.0);
+refractCoords += totalDistortion;
+refractCoords = clamp(refractCoords, 0.0, 1.0);
+vec4 reflectedColour = texture(reflectionTexture, reflectCoords);
+vec4 refractedColour = texture(refractionTexture, refractCoords);
+
+```
+
+* **计算高光**
+
+利用normal map，与入射角，计算反射角与太阳光照夹角，计算一个简略的高光
+
+```glsl
+vec3 normal;
+	if (clearWater) {
+		normal = vec3(0.0, 1.0, 0.0);
+	}
+	else {
+		normal = texture(normalMap, distortion).rgb;
+		// Assumes the normal of the water plane is always (0, 1, 0) 
+		// so the the y component for the normal will never be negative
+		normal = normalize(vec3(normal.r * 2.0 - 1.0, normal.g * waterNormalSmoothing, normal.b * 2.0 - 1.0)); 
+	}
+
+	vec3 viewVec = normalize(fragToView);
+	float fresnel = dot(viewVec, vec3(0.0, 1.0, 0.0)); // TODO: Should use sampled normal
+
+	// Direct Specular light highlights (TODO: Actually make this work for multiple directional lights, right now it requires there to be one directional light and only uses one)
+	vec3 reflectedVec = reflect(normalize(dirLights[0].direction), normal);
+	float specular = max(dot(reflectedVec, viewVec), 0.0);
+	specular = pow(specular, shineDamper);
+	vec3 specHighlight = dirLights[0].lightColor * specular * reflectivity * dampeningEffect;
+```
+
+
+
+* **透明度设置**
+
+根据水面和水底之间的距离来设置透明度，如果离得太远，就设置为1.0
+
+```glsl
+float near = nearFarPlaneValues.x;
+float far = nearFarPlaneValues.y;
+float depth = texture(refractionDepthTexture, refractCoords).r;
+float cameraToSurfaceFloorDistance = 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
+depth = gl_FragCoord.z;
+
+float cameraToWaterDistance = 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
+float waterDepth = cameraToSurfaceFloorDistance - cameraToWaterDistance;
+float dampeningEffect = clamp(waterDepth / dampeningEffectStrength, 0.0, 1.0);
+
+//calculate
+//....
+//...
+
+FragColour.a = dampeningEffect;
+```
+
+
+
+
+
