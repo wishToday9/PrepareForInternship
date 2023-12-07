@@ -830,5 +830,219 @@ center = matTransform(toShadowViewInv, center, 1.0f);
 
   在计算预先滤波卷积的时候，这次考虑了粗糙度，粗糙度越大，会导致反射更模糊，因此可以用mipmap去存储，有假设了视角方向总是等于输出采样方向w0。
 
-  和之前卷积环境贴图类似，我们可以对 BRDF 方程求卷积，其输入是 n 和 ωo 的夹角，以及粗糙度，并将卷积的结果存储在纹理中。我们将卷积后的结果存储在 2D 查找纹理（Look Up Texture, LUT）中，这张纹理被称为 BRDF 积分贴图，稍后会将其用于 PBR 光照着色器中，以获得间接镜面反射的最终卷积结果
+  和之前卷积环境贴图类似，我们可以对 BRDF 方程求卷积，其输入是 n 和 ωo 的夹角，以及粗糙度，并将卷积的结果存储在纹理中。我们将卷积后的结果存储在 2D 查找纹理（Look Up Texture, LUT）中，这张纹理被称为 BRDF 积分贴图，稍后会将其用于 PBR 光照着色器中，以获得间接镜面反射的最终卷积结果。
+  
+* **阴影**
+
+  * 生成过程：
+
+    1. 从光源位置渲染场景，得到一张深度图信息
+    2. 从摄像机出发，正常的渲染场景
+    3. 将场景变换到光源视角下，判断深度信息是否匹配。
+
+  * 常见问题：
+
+    1. 阴影抖动(摩尔纹)，可以通过偏移技术，增加一个bias比较片段深度，还有一种是自适应偏移的方案，基于斜率去计算当前深度要加的偏移。
+    2. 阴影锯齿，可以采用PCF来改善效果，能在一定程度上模糊软化阴影，但是根据物理实际现象，阴影的软硬程度也和阴影和遮挡物之间的距离有关系，PCSS就考虑了这一点，先通过一个filter去计算平均遮挡物距离，根据平均遮挡物距离求出在shadowmap上的filter大小，以达到此效果。
+
+    在项目中，unity srp实现的pcss，搜索平均遮挡物的距离的时候，给了一个光源的尺寸和csm的维度大小，越靠近相机，csm维度越小，searchFilter会更大。
+    $$
+    searchFilter = \frac{lightSize}{csmWidth}
+    $$
+
+  * CSM
+
+    对视锥体区域进行划分，近处区域用比较高的分辨率的阴影贴图，远处区域用于比较粗糙的阴影贴图。
+
+    Shadowmap对于大型场景渲染显得力不从心，很容易出现阴影抖动和锯齿边缘现象。对于室外大场景的实时阴影，可以使用CSM技术。
+
+  
+
+* **后处理算法**
+
+  * Bloom 泛光
+
+  OpenGL：
+
+  `提取高光区域👉模糊👉合并`。但是这么做效果并不好。
+
+  高质量泛光：
+
+  `提取高光区域👉降采样👉上采样+叠加`
+
+  降采样(mipmap)是为了迅速模糊，达到泛光的“泛”的效果，但是还不够亮，要使得它足够的亮，可以将mipmap相加，mipmap等级低的负责中心高亮，mipmap等级高的负责周边的泛，直接相加的话会导致pattern出现，因此可以上采样，边模糊边上采样。
+
+  ![image-20231207112210011](C++.assets/image-20231207112210011.png)
+
+  * Chromatic Abberation(色差)
+
+  求出与中心点的偏移量，根据偏移量采样不同坐标的r、g、b值
+
+  ```cpp
+  	vec2 diffFromCenter = TexCoords - vec2(0.5, 0.5);
+  	vec2 offset = diffFromCenter * texel_size * intensity;
+  
+  	// Emulated how Unity handles their "fast" implementation
+  	float r = texture2D(input_texture, TexCoords - (1 * offset)).r;
+  	float g = texture2D(input_texture, TexCoords - (2 * offset)).g;
+  	float b = texture2D(input_texture, TexCoords - (3 * offset)).b;
+  ```
+
+  * Vignette(晕影)
+
+   通过距离求出一个权重，越靠近中心权重越大，越靠近边缘权重越小，给一个背景颜色，然后将两者混合。
+
+  ```cpp
+  vec2 uv = TexCoords;
+  uv *= 1.0 - TexCoords.xy;
+  float vig = uv.x * uv.y * 15.0;
+  vig = pow(vig, intensity * 5.0);
+  
+  FragColour = vec4(mix(color, sceneColour, vig), 1.0);
+  ```
+
+  * Film Grain(电影颗粒)
+
+    根据时间、纹理位置生成一些随机值，就是颗粒的效果，最终和场景图混合。
+
+  ```cpp
+  vec3 colour = texture2D(input_texture, TexCoords).rgb;
+  
+  float x = (TexCoords.x + 4) * (TexCoords.y + 4) * ((time + 1) * 10.0);
+  vec4 grain = vec4(mod((mod(x, 13.0) + 1.0) * (mod(x, 123.0) + 1.0), 0.01) - 0.005) * intensity;
+  
+  FragColour = vec4(colour + grain.xyz, 1.0);
+  ```
+
+* **SSAO**
+
+把当前视点下的深度缓存当成场景的一个粗略的近似来计算AO , 因为它们都是基于场景在屏幕空间的一个特定表达 , 而 AO 计算也是在屏幕空间中进行的 。
+
+![image-20231207114916762](C++.assets/image-20231207114916762.png)
+
+1. 在以 p 点为中心、 R 为半径的球体空间内( 若有法向缓存则为半球体空间内 ) 随机地产生若干三维采样点
+2. 估算每个采样点产生的 AO : 计算每个采样点在深度缓存上的投影点 , 用投影点产生的遮蔽近似代替采样点的遮蔽。
+
+
+
+* **抗锯齿**
+
+  * FXAA
+
+  首先找出来边缘，可以根据亮度公式，相差比较大的就认为是边缘信息，对于边缘信息就要确定混合的方向，然后计算出对应的混合因子.
+
+  * MSAA
+
+* GI
+
+  * PRTGI
+
+  PRT思想：将光照切割成Lighting, Light Transport两部分。
+
+  
+
+
+
+
+
+
+
+### Unity
+
+* **Unity SRP原理**
+
+
+
+# 常见算法题
+
+## 排序
+
+* **快速排序**
+
+```cpp
+class Solution {
+public:
+    void quickSort(vector<int>& vec, int left, int right) {
+        if (left >= right)
+            return;
+        int l = left;
+        int r = right;
+        
+        int index = rand() % (right - left + 1);
+        swap(vec[left + index], vec[left]);
+        int privot = vec[left++];
+        
+
+        while (left <= right)
+        {
+            while (left <= right && vec[right] >= privot) {
+                --right;
+            }
+
+            while (left <= right && vec[left] <= privot)
+            {
+                ++left;
+            }
+            if (left < right) {
+                swap(vec[left], vec[right]);
+            }
+        }
+        swap(vec[l], vec[right]);
+        
+        int leftPivot = right - 1;
+        int rightPivot = right + 1;
+        // 优化二
+        while(leftPivot >= l && vec[leftPivot] == vec[right]) leftPivot--;
+        while(rightPivot <= r && vec[rightPivot] == vec[right]) rightPivot++;
+
+        quickSort(vec, l, leftPivot);
+        quickSort(vec, rightPivot, r);
+    }
+    vector<int> sortArray(vector<int>& nums) {
+        quickSort(nums, 0, nums.size() - 1);
+        return nums;
+    }
+};
+```
+
+* **归并排序**
+
+```cpp
+class Solution {
+    vector<int> tmp;
+    void mergeSort(vector<int>& nums, int l, int r) {
+        if (l >= r) return;
+        int mid = (l + r) >> 1;
+        mergeSort(nums, l, mid);
+        mergeSort(nums, mid + 1, r);
+        int i = l, j = mid + 1;
+        int cnt = 0;
+        while (i <= mid && j <= r) {
+            if (nums[i] <= nums[j]) {
+                tmp[cnt++] = nums[i++];
+            }
+            else {
+                tmp[cnt++] = nums[j++];
+            }
+        }
+        while (i <= mid) {
+            tmp[cnt++] = nums[i++];
+        }
+        while (j <= r) {
+            tmp[cnt++] = nums[j++];
+        }
+        for (int i = 0; i < r - l + 1; ++i) {
+            nums[i + l] = tmp[i];
+        }
+    }
+public:
+    vector<int> sortArray(vector<int>& nums) {
+        tmp.resize((int)nums.size(), 0);
+        mergeSort(nums, 0, (int)nums.size() - 1);
+        return nums;
+    }
+};
+```
+
+
 
