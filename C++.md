@@ -3054,6 +3054,108 @@ SDF是一个快速的高质量的软阴影生成方法(比shadow map快是忽略
 
 总体而言，一个好的着色器应该能够在性能和效果之间取得平衡，同时具有清晰、可读和可维护的代码结构。这样的着色器对于实现高质量的图形效果和优化渲染性能至关重要。
 
+
+
+## Geometry Shader
+
+在顶点和片段着色器之间有一个可选的几何着色器(Geometry Shader)，几何着色器的输入是一个图元（如点或三角形）的一组顶点。几何着色器可以在顶点发送到下一着色器阶段之前对它们随意变换。然而，几何着色器最有趣的地方在于，它能够将（这一组）顶点变换为完全不同的图元，并且还能生成比原来更多的顶点。
+
+### 爆破物体
+
+可以利用Geometry Shader实现爆破物体的功能。
+
+![image-20231219170629393](C++.assets/image-20231219170629393.png)
+
+
+
+爆破碎片：
+
+![image-20231219170644261](C++.assets/image-20231219170644261.png)
+
+具体做法：
+
+可以在几何着色器中先将gl_Position计算出在视图空间的坐标，并且我们输入的是一个图元面片，我们可以求出三角形面片的法线，让这个坐标沿着法线进行移动，相当于加一个offset，再进行projection变换，进行光照计算等，只是沿着法线进行了偏移，实现了效果。
+
+```cpp
+//vs
+void main()
+{
+    vs_out.texCoords = aTexCoords;
+    gl_Position = view * model * vec4(aPos, 1.0); 
+}
+
+//gs
+vec4 explode(vec4 position, vec3 normal)
+{
+    float magnitude = 1.0;
+    vec3 direction = normal * ((sin(time) + 1.0) / 2.0) * magnitude; 
+    return position + vec4(direction, 0.0);
+}
+
+vec3 GetNormal()
+{
+    vec3 a = vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position);
+    vec3 b = vec3(gl_in[2].gl_Position) - vec3(gl_in[1].gl_Position);
+    return -normalize(cross(a, b));
+}
+
+void main() {    
+    vec3 normal = GetNormal();
+
+    gl_Position = projection * explode(gl_in[0].gl_Position, normal);
+    TexCoords = gs_in[0].texCoords;
+    EmitVertex();
+    gl_Position = projection * explode(gl_in[1].gl_Position, normal);
+    TexCoords = gs_in[1].texCoords;
+    EmitVertex();
+    gl_Position = projection * explode(gl_in[2].gl_Position, normal);
+    TexCoords = gs_in[2].texCoords;
+    EmitVertex();
+    EndPrimitive();
+}
+```
+
+
+
+### 法线可视化
+
+法线可视化也是一样的道理，分成两个pass，第一个pass正常渲染物体，第二个pass完成可视化。
+
+可视化操作流程:
+
+同样先求出来在视角空间下的坐标(gl_position)，把输入片元设置成三角形，输出片元设置成直线，我们可以得到每一个点的顶点坐标信息，这个点就是直线的起点，沿着法线完成一定的偏移，另一个点就是直线的终点，在fs中输出一致的颜色，完成可视化。
+
+```cpp
+//vs
+void main()
+{
+    mat3 normalMatrix = mat3(transpose(inverse(view * model)));
+    vs_out.normal = vec3(vec4(normalMatrix * aNormal, 0.0));
+    gl_Position = view * model * vec4(aPos, 1.0); 
+}
+
+//gs
+void GenerateLine(int index)
+{
+    gl_Position = projection * gl_in[index].gl_Position;
+    EmitVertex();
+    gl_Position = projection * (gl_in[index].gl_Position + vec4(gs_in[index].normal, 0.0) * MAGNITUDE);
+    EmitVertex();
+    EndPrimitive();
+}
+
+void main()
+{
+    GenerateLine(0); // first vertex normal
+    GenerateLine(1); // second vertex normal
+    GenerateLine(2); // third vertex normal
+}
+```
+
+![image-20231219172036695](C++.assets/image-20231219172036695.png)
+
+
+
 ## 延迟渲染
 
 * **什么是延迟渲染？G-Buffer要存什么东西？**
