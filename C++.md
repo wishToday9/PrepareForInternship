@@ -237,7 +237,23 @@ int main() {
 
 
 
+* **C++类中默认函数**
 
+在C++中，如果你没有自己定义，编译器会为类生成一些默认的函数。这些函数包括：
+
+1. 默认构造函数（Default Constructor）：如果你没有定义任何构造函数，则编译器会生成一个默认构造函数。默认构造函数没有参数，并执行默认的对象初始化操作。
+
+2. 复制构造函数（Copy Constructor）：如果你没有定义复制构造函数，编译器会生成一个默认的复制构造函数。复制构造函数用于在创建新对象时，根据已有对象创建一个副本。
+
+3. 复制赋值运算符（Copy Assignment Operator）：如果你没有定义复制赋值运算符，编译器会生成一个默认的复制赋值运算符。复制赋值运算符用于将一个对象的值赋给另一个已经存在的对象。
+
+4. 移动构造函数（Move Constructor）：从C++11标准开始，如果你没有定义移动构造函数，编译器会生成一个默认的移动构造函数。移动构造函数用于在创建新对象时，根据已有对象创建一个副本，并且“窃取”已有对象的资源而不是复制。
+
+5. 移动赋值运算符（Move Assignment Operator）：从C++11标准开始，如果你没有定义移动赋值运算符，编译器会生成一个默认的移动赋值运算符。移动赋值运算符用于将一个对象的值赋给另一个已经存在的对象，并且“窃取”已有对象的资源而不是复制。
+
+6. 析构函数（Destructor）：如果你没有定义析构函数，编译器会生成一个默认的析构函数。析构函数用于在对象销毁时执行清理操作，并释放对象所占用的资源。
+
+需要注意的是，如果你显式地定义了一个构造函数、复制构造函数、复制赋值运算符、移动构造函数、移动赋值运算符或析构函数，编译器将不会生成默认的版本，并且你需要自己实现这些函数。
 
 
 
@@ -475,6 +491,20 @@ d.使用时声明一个该对象的类
 
 
 
+
+
+* **new和new[]会发生什么？**
+
+1. "new"关键字：用于分配单个对象的内存空间，并返回指向该对象的指针。当使用"new"创建对象时，会调用对象的构造函数来初始化对象。
+
+示例：
+
+2. "new[]"关键字：用于分配一片连续的内存空间以存储数组，返回指向数组首元素的指针。当使用"new[]"创建数组时，会调用数组元素的默认构造函数来初始化数组。
+
+
+
+
+
 ## 指针
 
 * **malloc/free和new/delete的区别**
@@ -613,6 +643,39 @@ new原本要与delete对应，delete比free会多了调用析构函数这一步�
 常量指针是指向常量的指针。
 
 指针常量是指针本是常量。
+
+
+
+## 模板元编程
+
+* **模板元编程了解多少，怎么用模板实现无符号十进制数值转换为等价二进制（数值计算，特化）**
+
+```cpp
+#include <iostream>
+
+template <unsigned long long N, int Bits = 8 * sizeof(N)>
+struct DecimalToBinary {
+	static void printBinary() {
+		DecimalToBinary<N / 2, Bits - 1>::printBinary();
+		std::cout << (N % 2);
+	}
+};
+
+template <unsigned long long N>
+struct DecimalToBinary<N, 0> {
+	static void printBinary() {}
+};
+
+int main() {
+	constexpr unsigned long long decimal = 123;
+	DecimalToBinary<decimal>::printBinary();
+	std::cout << std::endl;
+
+	return 0;
+}
+```
+
+
 
 
 
@@ -1270,7 +1333,28 @@ int main() {
 
 
 
-* **map实现的原理**
+* **C++中map的种类、区别和扩容方式**
+
+在C++标准库中，有两种主要的Map实现- `std::map`和`std::unordered_map`，它们有一些区别和特点。
+
+1. `std::map`：
+   - 基于红黑树实现的有序关联容器。
+   - 内部元素根据键值进行排序。
+   - 查找、插入和删除元素的平均时间复杂度为O(log N)。
+   - 不支持快速的随机访问，但可以按序遍历。
+   - 使用比较函数来保持键的有序性。
+
+2. `std::unordered_map`：
+   - 基于哈希表 (Hash Table) 实现的无序关联容器。
+   - 内部元素无特定顺序。
+   - 查找、插入和删除的平均时间复杂度为O(1)，具有较快的性能。
+   - 支持快速的随机访问。
+   - 使用哈希函数对键进行分布和存储。
+
+关于Map的扩容：
+- `std::map`的底层实现采用红黑树，不需要改变节点的位置和重新调整树的平衡，因此不需要进行扩容操作。
+- `std::unordered_map`的底层实现是哈希表，当容量不足以容纳更多元素时，会发生扩容操作。
+   - 扩容时，会创建一个更大的哈希表，并重新将元素散列到新的存储位置。
 
 
 
@@ -1473,24 +1557,109 @@ int main() {
 
 单例实例在第一次被使用时才进行初始化，这叫做延迟初始化。线程不安全，需要加锁，并且不能简单的在前面判空加锁，因为可能某个线程正在初始化单例，另一个线程却在判断单例是否为空，这样就会获取到不完全的单例，造成错误。
 
+```cpp
+class Singleton  
+{ 
+public:  
+  	static Singleton* getInstance() {
+        //第一个检查，如果只是读操作，就不许用加锁
+        if (m_pInstance == nullptr) {
+            std::lock_guard<std::mutex> lck(m_mutex);
+            //第二个检查，保证只有一个
+            if (m_pInstance == nullptr) {
+                m_pInstance = new Singleton;
+            }
+        }
+        return m_pInstance;
+    }
+    static void delInstance(){ // 为了多线程安全，本人觉得释放操作也要做 double-check
+    	if(m_pInstance != nullptr) 
+    	{
+    		std::lock_guard<std::mutex> lck(m_mutex);
+    		if(m_pInstance != nullptr) 
+    		{
+            	delete m_pInstance;
+            	m_pInstance = nullptr;
+        	}
+    	}        
+    };
+private:
+ 	Singleton(){
+        std::cout << "Singleton Hello" << std::endl;
+    };
+    ~Singleton() { // 私有化 可以避免 直接 delete s1 ，必须 使用 delInstance
+        std::cout << "Singleton Bye" << std::endl;
+    }
+    static Singleton* m_pInstance;
+    static std::mutex m_mutex;
+};  
+Singleton* Singleton::m_pInstance = nullptr;
+std::mutex Singleton::m_mutex;
+```
+
+最简单的实现方式：
+
+```cpp
+class SingletonInside  
+{  
+private:  
+    SingletonInside(){}  
+public:  
+    static SingletonInside* getInstance()  
+    {  
+        Lock(); // not needed after C++0x  
+        static SingletonInside instance;  
+        UnLock(); // not needed after C++0x  
+        return instance;   
+    }  
+};  
+```
+
 * **饿汉单例**
 
 在main函数开始的时候即创建对象，线程安全；
 
+```cpp
+class Singleton
+{
+public:
+	static Singleton* GetInstance()
+	{
+		return &m_instance;
+	}
+private:
+	// 构造函数私有
+	Singleton(){};
+	// C++98 防拷贝
+	Singleton(Singleton const&);
+	Singleton& operator=(Singleton const&);
+	// or
+	// C++11
+	Singleton(Singleton const&) = delete;
+	Singleton& operator=(Singleton const&) = delete;
+	static Singleton m_instance;
+};
+Singleton Singleton::m_instance; // 在程序入口之前就完成单例对象的初始化
+```
+
+
+
+
+
 ## 工厂模式
 
 - 该模式用来封装和管理类的创建，终极目的是为了解耦，实现创建者和调用者的分离。
-- 简单工厂
+- **简单工厂**
 
 ![image-20231206202155772](C++.assets/image-20231206202155772.png)
 
 
 
-* 工厂方法
+* **工厂方法**
 
 ![image-20231206202215318](C++.assets/image-20231206202215318.png)
 
-* 抽象工厂
+* **抽象工厂**
 
 ![image-20231206202426779](C++.assets/image-20231206202426779.png)
 
@@ -4513,7 +4682,6 @@ public:
         int index = rand() % (right - left + 1);
         swap(vec[left + index], vec[left]);
         int privot = vec[left++];
-        
 
         while (left <= right)
         {
@@ -4612,8 +4780,6 @@ void buildHeadp(vector<int>& nums, int n){
         adjust(nums, i, n);
     }
 }
-
-
 ```
 
 
@@ -4696,6 +4862,54 @@ int binarySearchLastGreaterOrEqual(const std::vector<int>& arr, int target) {
 }
 ```
 
+## 二叉树遍历
+
+* **栈的非递归遍历**
+
+  * 前序遍历
+
+  ```cpp
+  void preOrder(TreeNode *T){
+      TreeNode *stack[15];
+      int top = -1;
+      TreeNode *p = T;
+      while(p!=NULL||top!=-1){
+          if(p!=NULL){
+              stack[++ top] = p;
+              printf("%d\t",p->data); //入栈时，访问输出
+              p = p->lChild;
+          }else{
+              p = stack[top --];
+              p = p->rChild;
+          }
+      }
+  }
+  ```
+
+  
+
+  * 中序遍历
+
+  ```cpp
+  void inOrder(TreeNode *T){
+      TreeNode *stack[15];
+      int top = -1;
+      TreeNode *p = T;
+      while(p!=NULL||top!=-1){
+          if(p!=NULL){
+              stack[++ top] = p;
+              p = p->lChild;
+          }else{
+              p = stack[top --];
+              printf("%d\t",p->data);  //出栈时，访问输出
+              p = p->rChild;
+          }
+      }
+  }
+  ```
+
+  
+
 
 
 ## 随机算法
@@ -4736,6 +4950,80 @@ void shuffleArray(std::vector<int>& nums) {
 }
 ```
 
+## 位操作
+
+* **一个整数数组，只有两个数字只出现一次，其他数字出现两次，找出这两个数字**
+
+1. 对整数数组中的所有数字进行一次完整的异或运算，得到的结果是两个只出现一次的数字的异或结果。
+2. 在这个异或结果中找到为1的任意一位，可以通过按位与运算和移位操作来实现。这一位表示两个只出现一次的数字在该位上不同。
+3. 根据这一位，将原数组中的所有数字分成两组，一组中该位为1，另一组中该位为0。
+4. 分别对这两组数字进行异或运算，得到的结果即为只出现一次的两个数字。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+std::vector<int> findSingleNumbers(std::vector<int>&nums) {
+	int xorResult = 0;
+
+	// 计算所有数字的异或结果
+	for (int num : nums) {
+		xorResult ^= num;
+	}
+
+	// 找到异或结果中为1的最低位
+	int bit = 1;
+	while ((xorResult & bit) == 0) {
+		bit = bit << 1;
+	}
+
+	int result1 = 0, result2 = 0;
+
+	// 分成两组进行异或运算
+	for (int num : nums) {
+		if ((num & bit) == 0) {
+			result1 ^= num;
+		}
+		else {
+			result2 ^= num;
+		}
+	}
+
+	return { result1, result2 };
+}
+
+int main() {
+	std::vector<int> nums = { 1, 2, 1, 3, 2, 5 };
+	std::vector<int> singleNumbers = findSingleNumbers(nums);
+
+	std::cout << "The two single numbers are: " << singleNumbers[0] << " and " << singleNumbers[1] << std::endl;
+
+	return 0;
+}
+
+```
+
+* **一个整数数组，只有一个数字只出现一次，其他数字出现三次，找出这一个数字**
+
+```cpp
+int singleNumber(vector<int>& nums) {
+    int ans = 0;
+    for (int i = 0; i < 32; ++i) {
+        int total = 0;
+        for (int num: nums) {
+            total += ((num >> i) & 1);
+        }
+        if (total % 3) {
+            ans |= (1 << i);
+        }
+    }
+    return ans;
+}
+
+```
+
+
+
 
 
 # 开放题
@@ -4757,12 +5045,38 @@ void shuffleArray(std::vector<int>& nums) {
 
 * **C++优化**
 
-1. 对象池(享元)
-2. 预编译头
+1. **对象池(享元)**
+2. **预编译头**
 
 
 
 # Unity
+
+* **生命周期函数**
+
+在Unity中，在游戏对象（GameObject）上可以使用一系列的生命周期函数（Lifecycle Functions）来控制和管理对象的行为和状态。以下是常见的Unity生命周期函数：
+
+1. Awake()：
+   - 在对象被创建后立即调用。
+   - 可以进行初始化工作，例如变量的赋值和引用的获取。
+2. Start()：
+   - 在Awake()之后调用。
+   - 在所有对象的Awake()都执行完之后，在第一帧Update()之前调用。
+   - 通常用于准备开始游戏的工作。
+3. Update()：
+   - 在每一帧都会被调用。
+   - 用于更新对象的状态、处理输入和游戏逻辑等。
+4. FixedUpdate()：
+   - 在每一固定时间间隔调用，与帧率无关。
+   - 用于处理物理模拟和其他固定频率的更新。
+5. LateUpdate()：
+   - 在所有对象的Update()函数执行完之后调用。
+   - 通常用于对象的跟随或相机的跟随等需要在Update()之后处理的行为。
+6. OnEnable() 和 OnDisable()：
+   - 在对象被启用或禁用时调用。
+   - 可以在启用或禁用对象
+
+
 
 * **Update和FixUpdate区别**
 
