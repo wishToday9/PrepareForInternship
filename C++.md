@@ -524,6 +524,14 @@ d.使用时声明一个该对象的类
 
 
 
+* **侯捷C++内存管理笔记**
+
+[侯捷C++ 内存管理 第一讲 笔记 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/476637169#:~:text=C%2B%2B内存管理 1 一、四种内存分配和释放方法 在编程时可以通过上图的几种方法直接或间接地操作内存。 下面将介绍四种C%2B%2B内存操作方法： ... 2 二、基本构件之,array内存分配的大致情况。 ... 7 四、placement new 8 五、重载 更多项目)
+
+
+
+
+
 ## 指针
 
 * **malloc/free和new/delete的区别**
@@ -3442,8 +3450,6 @@ nanite管线对几何模型分成多个cluster，并且将一定数量的cluster
 
 ![image-20231221105545079](C++.assets/image-20231221105545079.png)
 
-
-
 LOD Selection 通过并行计算实现，需要绘制的条件为：parentError> threshold && ClusterError <= threshold
 将上述图拍平，在每一个cluster group中存放一个parent error
 
@@ -4154,12 +4160,6 @@ SSDO只能解决一个很小范围内的全局光照，下图是接近正确的�
 
 
 
-
-
-
-
-
-
 ## OpenGL渲染器
 
 ### 渲染队列
@@ -4803,6 +4803,48 @@ mipmap存储可见的距离摄像机最远的位置的深度值，然后进行Hi
 答案是10只。这个需要使用二进制编码来解决，1000瓶酒至少需要10位二进制数来进行编码。然后取十只杯子分别代表这是个二进制数的十个位，分别将1000瓶酒倒入其编码为1的对应的杯子中。取十个老鼠分别喝十个杯子中的酒，一天之后，就可以根据喝哪些杯子的老鼠死掉来确定出有毒的那瓶酒的编码，从而确定哪瓶酒有毒。其根据就是只有有毒酒的编码对应的毒死老鼠的杯子位置。这个题目就是利用了二进制编码的一些特性。
 
 # 常见算法题
+
+## 链表
+
+* **回文链表**
+
+快慢指针找出中间位置，反转后面的链表，进行比较
+
+```cpp
+bool isPalindrome(ListNode* head) {
+    if(head->next == nullptr)
+        return true;
+
+    ListNode* newHead = new ListNode();
+
+    ListNode* slow = head;
+    ListNode* fast = head;
+
+    while(fast && fast->next){
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    while(slow){
+        ListNode* temp = slow->next;
+        slow->next = newHead->next;
+        newHead->next = slow;
+        slow = temp;
+    }
+
+    newHead = newHead->next;
+
+    while(newHead && head){
+        if(newHead->val != head->val){
+            return false;
+        }
+        newHead = newHead->next;
+        head = head->next;
+    }
+    return true;
+}
+```
+
+
 
 ## 排序
 
@@ -5485,6 +5527,16 @@ X = - 0b11(-3) ，四比特表示原码 = 1011(11)，对应反码为 = 1100(12)�
   (实时阴影、实时全局光照算法)
 
   
+  
+  
+
+* **场景中有多个平行光源，如何考虑阴影？**
+
+* **地形绘制除了高度图，还有什么方法？**
+
+
+
+* **C++内存管理的方法**
 
 
 
