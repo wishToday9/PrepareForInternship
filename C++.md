@@ -2922,6 +2922,28 @@ VXGI把场景的次级光源记录为一个层次结构，对于一个Shading Po
 
 
 
+### SSR(屏幕空间光线追踪)
+
+
+
+
+
+### 光子映射
+
+光子映射分为两个阶段(pass).
+
+第一个阶段构建一张光子图，存储从光源发射的所有光子的能量信息。
+
+第二阶段，从相机进行传统的路径追踪，在追踪到漫反射表面的时候，统计光子信息，并根据这些信息计算最终的辐射率(radiance)。
+
+
+
+[光子映射总结（1/4）：基本全局光子映射（Basic Photon Mapping） - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/208356944)
+
+
+
+
+
 ## 抗锯齿处理
 
 ### 锯齿产生原因
@@ -4976,6 +4998,8 @@ ECS（Entity-Component-System）是一种游戏引擎中常用的模式设计，
 
 答案是10只。这个需要使用二进制编码来解决，1000瓶酒至少需要10位二进制数来进行编码。然后取十只杯子分别代表这是个二进制数的十个位，分别将1000瓶酒倒入其编码为1的对应的杯子中。取十个老鼠分别喝十个杯子中的酒，一天之后，就可以根据喝哪些杯子的老鼠死掉来确定出有毒的那瓶酒的编码，从而确定哪瓶酒有毒。其根据就是只有有毒酒的编码对应的毒死老鼠的杯子位置。这个题目就是利用了二进制编码的一些特性。
 
+
+
 # 常见算法题
 
 ## 链表
@@ -5416,10 +5440,6 @@ TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
 
 
 
-
-
-
-
 # 开放题
 
 * **镜子如何渲染？**
@@ -5488,13 +5508,9 @@ TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
 
 
 
-* **合批**
+* **Unity优化：批处理**
 
-[【Unity游戏开发】合批优化汇总 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/356211912)
-
-
-
-
+[Unity渲染优化的4种批处理：静态批处理，动态批处理，SRP Batcher 与 GPU Instancing - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/432223843)
 
 
 
