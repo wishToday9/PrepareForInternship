@@ -2,6 +2,14 @@
 
 ## 基础知识
 
+* **什么函数在main函数之前运行？**
+
+在 C 或 C++ 中，有一个特殊的函数可以在 `main()` 函数之前运行，它被称为 "构造函数"（constructor）。构造函数可以执行一些初始化操作，例如全局变量的初始化、静态对象的构造等。
+
+在 C++ 中，可以利用全局对象和静态对象的构造函数来实现在 `main()` 之前执行的代码。当程序启动时，在 `main()` 之前会自动执行所有全局对象和静态对象的构造函数。
+
+
+
 * **函数调用的过程**
 
 参数入栈、保护现场、函数跳转、恢复现场
@@ -159,10 +167,22 @@
 
 
 
-* 导入C函数的关键字，C++编译时和C有什么不同？
+* **导入C函数的关键字，C++编译时和C有什么不同？**
 
 1. **关键字：**在C++中，导入C函数的关键字是**extern**，表达形式为**extern “C”**， extern "C"的主要作用就是为了能够正确实现C++代码调用其他C语言代码。加上extern "C"后，会指示编译器这部分代码按**C语言**的进行编译，而不是C++的。
 2. **编译区别：**由于C++支持函数重载，因此编译器编译函数的过程中会将函数的**参数类型**也加到编译后的代码中，而不仅仅是**函数名**；而C语言并不支持函数重载，因此编译C语言代码的函数时不会带上函数的参数类型，一般只包括**函数名**。
+
+
+
+* **一个函数的参数列表是const int，另一个是int，能形成有效重载吗？**
+
+不，一个函数的参数列表为const int和另一个函数的参数列表为int，并不能形成有效重载。
+
+C++中的函数重载要求函数在参数列表上有显著的差异，这种差异可以是参数的类型、顺序或数量。但是，对于const修饰符来说，它并不会在重载决议时被视为参数类型的差异。
+
+在C++中，const int和int在函数重载的上下文中被视为相同的类型。因此，如果你尝试在同一个作用域中定义一个参数列表为const int的函数和另一个参数列表为int的函数，编译器会产生重复定义的错误，因为它们被视为具有相同的函数签名。
+
+如果你想要形成有效的重载，你需要在参数列表中引入其他具有显著差异的类型、顺序或数量。例如，你可以考虑使用其他类型的参数、引入额外的参数或者使用不同的参数顺序来形成有效的重载。
 
 
 
@@ -276,6 +296,46 @@ int main() {
 
 
 
+* **C++3种继承方式**
+
+  * **Public**
+
+  1. 基类的public和protected成员的访问属性在派生类中保持不变，但基类的private成员不可直接访问。
+
+  2. 派生类中的成员函数可以直接访问基类中的public和protected成员，但不能直接访问基类的private成员。
+
+  3. 通过派生类的对象访问从基类继承的成员，只能访问public成员。
+     
+
+  * **protected**
+
+  1. 基类的public和protected成员都以protected身份出现在派生类中，但基类的private成员`不可直接``访问。
+  2. 派生类中的成员函数可以直接访问基类中的public和protected成员，但不能直接访问基类的private成员。
+  3. 通过派生类的对象不能直接访问从基类继承的任何成员。
+
+  * **private**
+
+  1. 基类的public和protected成员都以private身份出现在派生类中，但基类的private成员不可直接访问。
+  2. 派生类中的成员函数可以直接访问基类中的public和protected成员，但不能直接访问基类的private成员。
+  3. 通过派生类的对象不能直接访问从基类继承的任何成员。
+
+![image-20240102100041872](C++.assets/image-20240102100041872.png)
+
+
+
+
+
+* **数组和指针的区别**
+
+1. 数组是直接访问数据，指针是间接访问数据的。
+2. 数组数据通常存储在栈上或者静态存储区，指针数据一般存储在堆区。
+3. 数组里存放的是数据，指针存放的是地址，指向了真正的数据。
+4. sizeof，数组返回的是数据的长度，而指针返回的是指针的大小(4、8)。
+
+
+
+
+
 ## 多态
 
 * **编译期多态和运行期多态**
@@ -319,7 +379,23 @@ C++虚函数是一种用于实现多态性的机制，它允许在派生类中�
 
 * **虚表是什么时候生成的？存储在哪一块区域？**
 
-编译期间，存储在只读字段(**全局区吗？**)。
+编译期间，存储在只读字段(**常量区吗？**)。
+
+C++中的虚函数表（Virtual Function Table，简称vtable）是用于实现多态性的机制之一。虚函数表是在编译阶段创建的，而不是在运行时动态生成的。
+
+
+
+* **虚函数如何支持变长参数**
+
+虚函数的参数可以通过传递函数的方式，回调变长参数对应的函数。
+
+
+
+* **模板函数可以是虚函数嘛？**
+
+每个含有虚函数的类中都有一个虚函数表，该虚函数表存储着该类的所有的虚函数的地址，因此，虚函数为模板函数时，该表的大小是不知道的，因此编译器禁止！  虚函数为模板函数的情况下，编译阶段不能确定类的虚函数表的大小原因：下文有提到"However, the number of instantiations of a member function template is not fixed until the entire program has been translated". 例如，一般一个类定义在一个单独的文件中，编译器编译这个文件时并不知道其他文件对该类的virtual func的调用情况，所以无法确定模板虚函数的实例化个数！
+
+
 
 
 
@@ -332,6 +408,14 @@ C++虚函数是一种用于实现多态性的机制，它允许在派生类中�
 * **钻石(菱形)继承存在什么问题，如何解决**？
 
 存在二义性问题，两个父类对公共基类的数据和方法产生一份拷贝，因此对于子类来说的，读写一个公共基类的数据或者调用一个方法的时候，不知道是哪一个父类的数据和方法，就会导致编译出错。可以采用虚继承的方法解决这个问题，这样就只会创造一份公共基类的实例，不会造成二义性。
+
+C++库中就有这样的例子：
+
+![image-20240102165531984](C++.assets/image-20240102165531984.png)
+
+
+
+
 
 * **C++ RTTI 机制**
 
@@ -414,6 +498,22 @@ d.使用时声明一个该对象的类
 假设一个派生类的对象进行析构，首先调用了派生类的析构，然后在调用基类的析构时，遇到了一个虚函数，这个时候有两种选择：Plan A是编译器调用这个虚函数的基类版本，那么虚函数则失去了运行时调用正确版本的意义；Plan B是编译器调用这个虚函数的派生类版本，但是此时对象的派生类部分已经完成析构，“数据成员就被视为未定义的值”，这个函数调用会导致未知行为。
 
 实际情况中编译器使用的是Plan A，如果虚函数的基类版本不是纯虚实现，不会有严重错误发生，但你依然会困惑虚函数机制失效，说不准又是“一张通往彻夜调试的直达车票”，所以Effective C++建议不要这么干。
+
+
+
+* **虚函数指针个数**
+
+1. 当基类Base有虚函数；
+class Base{};
+Base对象的前四个字节有一个虚函数表指针，指向Base的虚函数表；
+
+2. 当基类Base有虚函数，子类Derived没有虚函数；
+class Derived: publish Base{};
+Derived对象的前四个字节有一个虚函数表指针，指向Derived类的虚函数表；
+
+3. 当基类Base1有虚函数，Base2有虚函数，子类Derived没有虚函数；
+class Derived: publish Base1, Base2{};
+Derived对象的前四个字节有一个虚函数表指针，指向Derived类的虚函数表；后面Base2对象内存起始处还有一个虚函数表指针，指向Base2的虚函数表；
 
 
 
@@ -578,6 +678,12 @@ new原本要与delete对应，delete比free会多了调用析构函数这一步�
 	1. 释放内存后置为nullptr
 	1. 使用智能指针
 
+* **内存泄露的常见原因**
+
+delete/new 不配对，发生异常导致delete/new运行不配对， 数组的释放没有用delete[]， 循环引用导致引用计数始终不为0。
+
+
+
 * **C++中的智能指针有哪些，各自有什么作用？**
 
 智能指针主要是用来解决内存泄漏的问题，以及避免多个裸指针指向同一资源时，多次释放资源时，对悬空指针进行释放导致不可预知的错误，它可以主动释放内存，因为它本身是一个类，在函数结束的时候调用析构函数释放内存，智能指针分为不带引用计数的unique_ptr，带引用计数的shared_ptr和weak_ptr
@@ -635,15 +741,25 @@ new原本要与delete对应，delete比free会多了调用析构函数这一步�
 
 （3）在类的成员函数可以调用delete this，并且delete this之后还可以调用该对象的其他成员，但是有个前提：被调用的方法不涉及这个对象的数据成员和虚函数。当一个类对象声明时，系统会为其分配内存空间。在类对象的内存空间中，只有数据成员和虚函数表指针，并不包含代码内容，类的成员函数单独放在代码段中。
 
+
+
+* **this指针**
+
+其实编译器在生成程序时加入了获取对象首地址的相关代码。并把获取的首地址存放在了寄存器ECX中(VC++编译器是放在ECX中，其它编译器有可能不同)。也就是成员函数的其它参数正常都是存放在栈中。而this指针参数则是存放在寄存器中。
+类的静态成员函数因为没有this指针这个参数，所以类的静态成员函数也就无法调用类的非静态成员变量。
+
+
+
+
+
 * **C++ unique_ptr和裸指针的性能开销上有什么不同？**
-
-  * **内存管理开销：** `std::unique_ptr` 通常包含一个指向堆上对象的指针和一个额外的控制块，用于管理资源的所有权。这可能导致 `std::unique_ptr` 对象相较于裸指针占用更多的内存。然而，现代编译器通常会进行优化，使得这种开销相对较小。
-
-  * **构造和销毁开销：** 创建和销毁 `std::unique_ptr` 对象可能涉及更多的工作，因为它需要在构造和析构时管理资源。相较之下，裸指针的构造和销毁开销较小。但这种差异通常在实际应用中不是性能瓶颈。
-
-  * **函数调用开销：** 将 `std::unique_ptr` 传递给函数可能会涉及更多的指针复制，因为 `std::unique_ptr` 是非拷贝可传递（move-only）的。这意味着在函数调用中可能会执行资源所有权的转移。对比之下，裸指针的传递只涉及指针值的复制。
-
-  * **异常处理开销：** `std::unique_ptr` 提供了异常安全性，当异常发生时，会自动释放其管理的资源。这可能导致与裸指针相比更多的开销。但这种开销通常是可以接受的，尤其是考虑到异常安全性的好处。
+* **内存管理开销：** `std::unique_ptr` 通常包含一个指向堆上对象的指针和一个额外的控制块，用于管理资源的所有权。这可能导致 `std::unique_ptr` 对象相较于裸指针占用更多的内存。然而，现代编译器通常会进行优化，使得这种开销相对较小。
+  
+* **构造和销毁开销：** 创建和销毁 `std::unique_ptr` 对象可能涉及更多的工作，因为它需要在构造和析构时管理资源。相较之下，裸指针的构造和销毁开销较小。但这种差异通常在实际应用中不是性能瓶颈。
+  
+* **函数调用开销：** 将 `std::unique_ptr` 传递给函数可能会涉及更多的指针复制，因为 `std::unique_ptr` 是非拷贝可传递（move-only）的。这意味着在函数调用中可能会执行资源所有权的转移。对比之下，裸指针的传递只涉及指针值的复制。
+  
+* **异常处理开销：** `std::unique_ptr` 提供了异常安全性，当异常发生时，会自动释放其管理的资源。这可能导致与裸指针相比更多的开销。但这种开销通常是可以接受的，尤其是考虑到异常安全性的好处。
 
 `std::unique_ptr` 在实现上通常包含一个控制块（control block），它用于管理所拥有对象的生命周期和资源释放。这个控制块包含了以下信息：
 
@@ -712,10 +828,43 @@ int main() {
 
 * 引入了nullptr、constexpr、auto、using等
 * 在面向对象上，引入了继承构造、委托构造。
+* **C++11为什么引入nullptr**
+
+C++11引入了`nullptr`，用于表示空指针。它的引入主要是为了解决传统C++中使用`NULL`来表示空指针时的一些问题和模糊性。
+
+以下是一些引入`nullptr`的原因和优势：
+
+1. 模糊性：在传统C++中，`NULL`是一个宏定义，通常被定义为整数值0。由于C++的隐式类型转换规则，`NULL`有时会被错误地解释为整数类型，导致一些潜在的问题。而`nullptr`是一个关键字，代表空指针，不会被错误地解释为整数类型。
+
+2. 类型安全：`nullptr`是一种特殊的空指针类型，与其他类型不兼容，这在编译时可以帮助我们捕捉一些类型不匹配的错误。传统的`NULL`是一个整数常量，可以与其他整数类型进行隐式转换，容易引发类型错误。
+
+3. 重载解析：`nullptr`在函数重载解析时具有唯一的类型，这有助于减少函数重载时的歧义性。传统的`NULL`是一个整数，与其他整数类型进行函数重载时可能产生歧义。
+
+4. 明确语义：使用`nullptr`可以更加明确地表达代码的意图，使代码更容易理解和维护。它明确表示一个空指针的概念，而不是一个整数常量的替代。
+
+* **C++11为什么引入了enum class**
+
+C++11引入了`enum class`（也称为枚举类或强类型枚举）来解决传统C++枚举的一些问题，并提供更强大和更安全的枚举类型。
+
+以下是一些引入`enum class`的原因和优势：
+
+1. 类型安全性：传统的C++枚举是弱类型的，可以隐式地转换为整数类型，这可能导致意想不到的错误。而`enum class`是强类型枚举，不会自动转换为整数类型，必须使用显式的转换方式。
+
+2. 作用域限定：传统的C++枚举的成员名称在相同的作用域中是唯一的，这容易导致名称冲突。而`enum class`引入了作用域的概念，成员的名称在枚举类的作用域内是唯一的，避免了命名冲突。
+
+3. 清晰性和可读性：`enum class`要求使用作用域限定符来访问枚举成员，使代码更加清晰和可读。通过显式地指明枚举成员的所属类型，代码的意图更加明确。
+
+4. 前向声明：使用传统的C++枚举时，无法在枚举定义之前进行前向声明。而`enum class`允许在需要的地方进行前向声明，减少了
 
 ### 模板
 
 * **引入了变长参数模板、**
+
+
+
+* **模板类A有static变量，那么程序中有几份这个变量？**
+
+对于模板类A中的静态变量x，每个模板参数实例化会有一份对应的静态变量x的实例。也就是说，每个模板参数的实例都拥有自己的静态变量x。
 
 
 
@@ -804,6 +953,20 @@ C++是分离式编译，编译是对每一个cpp文件而言的，将cpp编译�
   * 这就是深拷贝和浅拷贝的区别，浅拷贝只是简单地复制某个对象的指针，新旧对象共享同一块内存；深拷贝会另外创造一片新的内存，新对象与老对象不会共享内存，修改新对象不会改到原对象。
 
   
+
+  
+
+  
+
+
+
+* **拷贝构造函数可以不加引用吗？**
+
+在C++中，拷贝构造函数的参数通常应该添加引用修饰符。拷贝构造函数用于创建一个新对象，其内容与另一个同类型对象相同。通过将参数声明为引用，可以避免不必要的对象副本的创建，提高性能并避免内存资源的浪费。
+
+如果拷贝构造函数的参数不带引用修饰符，而是以值的方式传递，会导致拷贝构造函数本身的无限递归调用，形成无限循环。每次调用拷贝构造函数都会创建新的对象，直到栈溢出或内存耗尽
+
+
 
 * **什么是移动构造函数，和拷贝构造函数有什么区别**
 
@@ -1086,9 +1249,35 @@ private:
 
 * 是一种弱引用智能指针，不会引起计数的增加，进而解决循环引用问题。
 
+
+
+* weak_ptr可以检查当前指向的数据是否还有效
+
+```cpp
+std::shared_ptr<int> sharedPtr = std::make_shared<int>(42);
+std::weak_ptr<int> weakPtr = sharedPtr;
+
+//sharedPtr.reset(); // 释放 shared_ptr 拥有的资源
+
+if (weakPtr.expired()) {
+    // weak_ptr 指向的对象已被释放
+    // 可以选择删除 weak_ptr，或者重新创建一个 shared_ptr 对象来操作对象
+}
+else {
+    std::shared_ptr<int> newSharedPtr = weakPtr.lock();
+    // 使用 newSharedPtr 操作对象
+}
+```
+
+
+
+
+
 ### 多线程
 
 * **thread**
+
+
 
 
 
@@ -1116,6 +1305,12 @@ private:
   以上情况是链接属性被设置为内部链接，对其他单元是隐藏的。
 
   * 修饰类中的函数与变量，表示由所有对象所有，存储空间只存在一个副本，静态非常量数据成员，只能在类外定义和初始化，在类中只是声明。
+
+* **类中的静态成员是什么时候初始化的？**
+
+类静态成员变量在main函数执行前完成初始化，有静态初始化和动态初始化
+static initialization: 静态初始化指的是用常量来对变量进行初始化,主要包括 zero initialization 和 const initialization，静态初始化在程序加载的过程中完成，对简单类型(内建类型，POD等)来说，从具体实现上看，zero initialization 的变量会被保存在 bss 段，const initialization 的变量则放在 data 段内，程序加载即可完成初始化，这和 c 语言里的全局变量初始化基本是一致的。
+dynamic initialization：动态初始化主要是指需要经过函数调用才能完成的初始化，比如说：int a = foo()，或者是复杂类型（类）的初始化（需要调用构造函数）等。这些变量的初始化会在 main 函数执行前由运行时调用相应的代码从而得以进行(函数内的 static 变量除外)。
 
 
 
@@ -1167,9 +1362,21 @@ private:
 
   * 宏定义时要注意书写（参数要括起来）否则容易出现歧义，内联函数不会产生歧义；
 
+* **inline函数和普通函数的区别**
 
+ `inline`函数与普通函数的区别在于，当编译器处理调用[内联函数](https://so.csdn.net/so/search?q=内联函数&spm=1001.2101.3001.7020)的语句时，不会将该语句编译成函数调用的指令，而是直接将整个函数体的代码插人调用语句处，就像整个函数体在调用处被重写了一遍一样。这一点有点类似于宏定义。中心思想是以空间换时间
 
 ## STL
+
+* **你觉得STL的出现是否在一定程度上是“反”面向对象的编程范式**
+
+STL（标准模板库）的出现并不是对面向对象编程范式的反面，而是一种面向对象编程的补充和扩展。
+
+虽然STL是基于泛型编程思想的，而不是传统的面向对象编程，但它仍然符合面向对象编程的一些原则，例如封装、抽象和多态性。STL重点关注的是算法和数据结构的抽象和通用化，通过提供各种容器和算法，使编程更加灵活、高效和可重用。
+
+STL中的容器（如vector、list、map等）提供了封装数据和操作的能力，可以进行数据的管理和组织。同时，STL提供的算法（如排序、查找、遍历等）也允许在处理数据时应用抽象和多态的概念。另外，STL的迭代器机制也提供了一种基于接口和抽象的方式来访问和操作容器中的元素。
+
+因此，尽管STL与传统的面向对象编程有一些区别，但它并不是“反”面向对象编程的
 
 * **STL六大组件和关系**
 
@@ -1255,7 +1462,23 @@ for(auto iter=vec.begin();iter!=vec.end(); )
 }
 ```
 
+* **vector里加入10万数据，游戏中有对象的指针指向这些数据，这可能有什么问题?**
 
+**指针失效：** 插入或删除元素可能导致`std::vector`进行重新分配，使得之前保存的指针变得无效。
+
+**线程安全性：** 如果在多线程环境中访问`std::vector`，需要采取适当的同步措施，以防止竞态条件和其他并发问题。使用锁或其他线程安全的数据结构可能是必要的。
+
+
+
+* **vector clear()时间复杂度是多少？**
+
+可能很多人都不在意，在使用STL容器的时候，潜意识里面将clear()成员函数视为常量时间复杂度O(1)的。但是其实不然。我感觉可能是很多人都知道对于vector而言，clear()之后，修改了size()的结果，不影响capacity()的结果，因而得出clear()只是修改了某个标记，是常量时间复杂度的错误结论。
+
+其实C++标准明确指出不管是序列容器（比如vector）还是关联容器（比如unordered_map)其clear()成员函数都是线性时间复杂度O(n)的。因为只要执行了clear()就需要对其存储的元素调用析构函数，这个析构操作显然是逐个析构的。因而时间复杂度是O(n)。
+
+可能很多人都不在意，在使用STL容器的时候，潜意识里面将clear()成员函数视为常量时间复杂度O(1)的。但是其实不然。我感觉可能是很多人都知道对于vector而言，clear()之后，修改了size()的结果，不影响capacity()的结果，因而得出clear()只是修改了某个标记，是常量时间复杂度的错误结论。
+
+其实C++标准明确指出不管是序列容器（比如vector）还是关联容器（比如unordered_map)其clear()成员函数都是线性时间复杂度O(n)的。因为只要执行了clear()就需要对其存储的元素调用析构函数，这个析构操作显然是逐个析构的。因而时间复杂度是O(n)。
 
 
 
@@ -1448,6 +1671,28 @@ int main() {
 
 
 
+* **常见Hash函数**
+
+有许多常见的哈希函数可用于不同的应用场景。以下是一些常见的哈希函数：
+
+1. 直接寻址法：将关键字直接作为哈希值，在哈希表中直接寻址。适用于关键字是整数范围内的场景，但对于大范围的整数可能会导致空间浪费。
+
+2. 除留余数法：将关键字除以某个质数，取余数作为哈希值。选取质数可以更好地分布哈希值。这是一种简单而常用的哈希函数。
+
+3. 乘法哈希法：将关键字乘以一个介于 0 和 1 之间的常数，提取其小数部分，并乘以哈希表大小，取整后作为哈希值。这种方法可以比较均匀地分布哈希值。
+
+4. 布尔哈希法：将关键字按位异或或按位与等逻辑运算，然后对结果取哈希表大小的模。这种方法在处理字符串时常用。
+
+5. 加法哈希法：将关键字的每个字符的 ASCII 值相加，然后取哈希表大小的模。这也是一种常用的字符串哈希函数。
+
+6. MD5 哈希函数：MD5 (Message Digest Algorithm 5) 是一种广泛使用的哈希函数，将输入数据的任意长度映射为 128 位哈希值。它具有较低的碰撞概率和较高的哈希值分布性。
+
+7. SHA 哈希函数：SHA (Secure Hash Algorithm) 被广泛用于安全性要求较高的应用，如数据的完整性验证和密码学。SHA-1、SHA-256、SHA-512 等是常见的 SHA 哈希函数。
+
+以上只是一些常见的哈希函数示例，根据不同的应用场景和需求，可能需要选择或设计适合的哈希函数。
+
+
+
 * **map和unordered_map区别**
 
 `std::map` 和 `std::unordered_map` 是 C++ 标准模板库（STL）中提供的两种关联容器，用于存储键值对。它们之间的主要区别在于底层实现和性能特征。
@@ -1506,6 +1751,8 @@ int main() {
 2. **避免死锁：** 谨慎设计锁的获取顺序，以避免死锁的发生。当多个线程试图以不同的顺序获取多个锁时，可能发生死锁。
 3. **内存可见性：** 考虑多线程环境下的内存可见性问题，确保一个线程对共享数据的修改对其他线程是可见的。可以使用`std::atomic`或者适当的内存顺序来解决。
 
+
+
 * **访问共享内存除了用锁，还用什么？**
 
 1. **原子操作：** 使用`std::atomic`和相关的原子操作函数，可以在没有锁的情况下执行一些基本的原子操作。例如，`std::atomic<int>`可以用于原子地更新整数。
@@ -1531,11 +1778,65 @@ int main() {
 
 需要注意的是，具体的原子操作实现方式依赖于硬件体系结构和操作系统。不同的处理器架构和操作系统可能使用不同的机制来支持原子操作。在C++中，通过 `<atomic>` 头文件提供的原子类型和操作可以在不同平台上使用这些底层机制，而不必关心具体的实现细节。
 
+## 异常
+
+* **C++构造函数和析构函数抛出异常的情况**
+
+**C++构造函数中异常：**在C++构造函数中，既需要分配内存，又需要抛出异常时要特别注意防止内存泄露的情况发生。因为在构造函数中抛出异常，在概念上将被视为该对象没有被成功构造，因此当前对象的析构函数就不会被调用。同时，由于构造函数本身也是一个函数，在函数体内抛出异常将导致当前函数运行的结束，并释放已经构造的成员对象，**当然包括其基类的成员，即要执行直接基类和成员对象的析构函数，不会执行自身对象的析构函数。**
+
+**C++析构函数中异常：**在析构函数中是可以抛出异常的，但是这样做很危险，请尽量不要这要做。原因在《More Effective C++》中提到两个：
+
+（1）如果析构函数抛出异常，则异常点之后的程序不会执行，如果析构函数在异常点之后执行了某些必要的动作比如释放某些资源，则这些动作不会执行，会造成诸如资源泄漏的问题。
+
+（2）通常异常发生时，c++的异常处理机制在异常的传播过程中会进行栈展开（stack-unwinding），因发生异常而逐步退出复合语句和函数定义的过程，被称为栈展开。在栈展开的过程中就会调用已经在栈构造好的对象的析构函数来释放资源，此时若其他析构函数本身也抛出异常，则前一个异常尚未处理，又有新的异常，会造成程序崩溃。
+
+
+
+
+
+
+
+
+
+
 ## 工程问题
 
 * **如果一个类有其他的类作为数据成员，构造函数调用顺序是怎么样的？**
 
 成员对象的构造函数是在主题构造函数体开始之前调用的，基类的构造函数会在派生类构造函数之前调用。
+
+* **谈一谈你对zero overhead（零开销原则）的理解**
+
+The*zero-overhead principle*C++ 设计原则指出：
+
+1. 您无需为不使用的东西付费。
+2. 您所使用的内容与您可以合理手写的内容一样高效。
+
+一般来说，这意味着不应向 C++ 添加任何会造成任何开销（无论是在时间还是空间上）的功能，这些开销大于程序员在不使用该功能的情况下引入的开销。
+
+该语言中唯一不遵循零开销原则的两个功能是 [runtime type identification](https://runebook.dev/zh/docs/cpp/language/typeid) 和 [exceptions](https://runebook.dev/zh/docs/cpp/language/exceptions) ，这就是为什么大多数编译器都包含一个开关来关闭它们。
+
+说的实际一点，也就是能不在程序运行期进行的计算就不在运行期计算。
+
+编译器常量、模板、静态检查。
+
+
+
+* **有使用过noexcept关键字吗？它有什么使用功能？**
+
+是的，我熟悉`noexcept`关键字。`noexcept`是一个C++11引入的关键字，用于指示一个函数是否可能抛出异常。
+
+`noexcept`关键字有以下几个使用功能：
+
+1. 异常规约：`noexcept`可以放在函数声明或定义的尾部，用于指示函数是否可能抛出异常。如果函数被标记为`noexcept`，那么它应该不会抛出异常，否则需要指明可能抛出的异常类型。这有助于提高代码的可靠性和可理解性。
+
+2. 优化机会：对于标记为`noexcept`的函数，编译器可以进行更多的优化，因为它知道函数不会抛出异常。这可能会带来更好的性能和代码生成。
+
+3. 异常传播：如果一个函数调用了一个标记为`noexcept`的函数，编译器会在编译时进行静态检查，以确保异常不会从`noexcept`函数传播出来。这有助于在编译时捕获异常传播问题。
+
+需要注意的是，`noexcept`仅表示函数不会抛出异常，但并不是要求函数不会调用可能会抛出异常的
+
+
 
 ### 编译原理
 
@@ -1585,6 +1886,35 @@ int main() {
 如果对象池闲置过小，没有可用的对象时，会造成之前`对象池无可用的对象时，再次请求`出现的问题
 
 对象池的大小选取应该结合具体的使用场景，结合数据（触发池中无可用对象的频率）分析来确定。
+
+
+
+* **对象池和享元模式的区别**
+  享元模式（Flyweight Pattern）和对象池（Object Pool）都是软件设计中用于提高性能和资源利用率的模式，但它们的关注点和应用场景有所不同。
+
+**享元模式：**
+
+1. **目标：** 主要关注在系统中尽量减少对象的数量，通过共享相同的对象实例来降低内存占用和提高性能。
+2. **机制：** 通过共享已存在的相似对象来减少创建新对象的开销。通过将对象的共享部分与独特部分分离，共享部分可被多个对象共享，而独特部分则由各对象自己维护。
+3. **适用场景：** 适用于大量相似对象的场景，其中大部分属性是可以共享的。
+
+**对象池：**
+
+1. **目标：** 主要关注对象的重复使用，通过维护一组预创建的对象池来减少创建和销毁对象的开销。
+2. **机制：** 对象池会预先创建一定数量的对象，并在需要时从池中获取对象，而不是每次都新建一个对象。使用完毕后，对象被放回池中，而不是被销毁。
+3. **适用场景：** 适用于对象的创建和销毁开销较大，但在应用中对象的状态经常变化的场景，通过对象池可以避免频繁地创建和销毁对象。
+
+**总结：**
+
+- **关注点不同：** 享元模式关注对象共享，减少对象数量，而对象池关注对象的重复使用，减少创建和销毁的开销。
+- **应用场景不同：** 享元模式适用于大量相似对象，而对象池适用于需要频繁创建和销毁对象的场景。
+- **机制不同：** 享元模式通过共享相似部分来减少对象的数量，而对象池通过重复使用已创建的对象来减少创建和销毁的开销。
+
+
+
+
+
+
 
 
 
@@ -1653,19 +1983,19 @@ std::mutex Singleton::m_mutex;
 最简单的实现方式：
 
 ```cpp
-class SingletonInside  
-{  
-private:  
-    SingletonInside(){}  
-public:  
-    static SingletonInside* getInstance()  
-    {  
-        Lock(); // not needed after C++0x  
-        static SingletonInside instance;  
-        UnLock(); // not needed after C++0x  
-        return instance;   
-    }  
-};  
+class Singleton
+{
+public:
+    ~Singleton(){std::cout<<"destructor called!"<<std::endl;}
+    Singleton(const Singleton&)=delete;
+    Singleton& operator=(const Singleton&)=delete;
+    static Singleton& get_instance(){
+        static Singleton instance;
+        return instance;
+    }
+private:
+    Singleton(){std::cout<<"constructor called!"<<std::endl;}
+};
 ```
 
 * **饿汉单例**
@@ -1917,6 +2247,8 @@ Sutherland-Hodgman 算法是一种用于对多边形进行裁剪的算法，而�
 1. 几何着色器，用于处理几何图形，通常在顶点着色器喝片元着色器之间执行，用于生成新的几何图形、增加几何细节、执行投影和裁等等
 2. 细分着色器是用于曲面细分的一对着色器。TCS（细分控制着色器）用于控制如何细分曲面，而TES（细分评估着色器）用于计算细分曲面的最终顶点坐标。
 3. 计算着色器，可以执行通用计算任务，而不涉及图像渲染，通常用于GPGPU任务，数据处理以及物理模拟等等。
+
+
 
 * **什么是DrawCall**
 
@@ -2524,6 +2856,58 @@ d = lerp(c011,c111,tx)
 
 
 
+
+
+
+### G-Buffer压缩
+
+* **BaseColor压缩**
+
+对于颜色的压缩，由于我们需要对Basecolor进行频繁的写操作，用于Texture的压缩方案并不适用于Basecolor,使用更少的精度的表示的方法，必然会造成颜色信息的损失。这边只介绍两种颜色模型，一种是Y'UV，一种是Y'CbCr,这两种颜色模型有一个共同点，就是都将亮度提取出来，Y'UV还包括Y'UV444，Y'UV422，Y'UV411,Y'UV420p等压缩形式的存储。其中Y'UV中，Y'是亮度，U是蓝色的映射，V是红色的映射：
+
+对比两幅图，可以看出来，其实两种颜色模型是很接近的，维基百科中说Y'UV是用于模拟的，Y'CbCr是用于数字的，我只能看出来U的信息量要大于Cb，至于更具体的差异，我就不知道了。但是，这里的对于亮度的提取，对后面介绍的CryEngine的GBuffer压缩是很有用的，而且，另外两个通道的信息频率小也是必要的。需要提醒的是，Y'中的'意思是Gamma空间，在shader中写转换的时候需要将线性空间的颜色先转换到Gamma空间。
+
+
+
+* **法线压缩**
+
+本质上都是想做一个三维到二维的投影，去减少存储空间，尽可能不丢失精度。
+
+1. 直接只存xy分量，z分量通过单位方向向量的特性重建。但是显然2元的插值和3元的插值是不等的，对（0,1,0）和(0,0,1)两个像素的中间插值后的法线归一化后大约是（0,0.7,0.7），而用2元向量插值即（0,1）和（0,0）则得到（0,0.5），推算出z方向后则变成了（0，0.5, 0.86），这是两个相差很大的向量方向，问题的根源在于我们不能编程gpu上对于贴图的采样插值方法。所以这里面用2通道代替3通道，其实对插值后的法线效果是有损失的，它会趋向将插值后的z值抬升，然而相当多的引擎仍然是这样做的，原因就在于幸运的是在现实中在切线空间的法线大多数的值z都趋向于1，且插值的两个方向的xy不会差很远，而当两个插值的z越趋近于1，2元插值和3元插值的结果就越相近。
+
+2. 仍然只存xy方向，它的模取z值，这样z也会被插值，重构的时候误差小一点。(CryEngine3)
+
+   ![image-20240104110258073](C++.assets/image-20240104110258073.png)
+
+3. **Stereographic Projection**
+
+   如何将球面映射到平面上，在古老的制图学里面就有研究，也就是如何将地球画到平面地图上，Stereographic Projection就是其中之一。它的思路很简单，就是选取北极点，然后让所有的点和北极点相连，与z平面相交的点就是我们要的映射点：
+
+   
+
+   ![image-20240104114403707](C++.assets/image-20240104114403707.png)
+
+4. **Spheremap Transform**
+
+这个方法在测图学的名字叫Lambert azimuthal equal-area projection，主要思路是选取一个南极点，然后找到以南极点为圆心，过球上的一点，且垂直于绘图平面的唯一确定的圆，然后圆与绘图平面相交的点，就是球面映射到绘图平面的点：
+
+![image-20240104114509433](C++.assets/image-20240104114509433.png)
+
+
+
+
+
+
+
+* **G-Buffer压缩**
+
+前面介绍了normal和color的编码压缩方式，现在可以介绍CryEngine是如何魔幻的将Gbuffer的所有信息压缩到了一个RGBA32bit的贴图中去的了。
+
+首先，它使用了Spheremap Transform的方式压缩normal（16bit），然后使用了Y'CbCr的颜色编码（32bit），外加一个Metallic（8bit）和Roughness（8bit），所以，总共的信息量应该是64bit。压缩过程是这样的，判断当前pixel坐标x,y是否同奇偶，然后按以下规则存储：
+
+![image-20240104111823833](C++.assets/image-20240104111823833.png)
+
+这样，当前像素就会于十字相邻的像素存储不同的信息。但是，每个像素都会存着Y'，也就是亮度信息，由于亮度信息是高频信息，如果用周围像素来还原是误差比较大的。这是编码过程，解码过程是通过使用Y'做判断，是否差值小于某个阈值，如果小于就考虑在内，如果不小于就放弃，然后将被考虑在内的像素值加起来取平均（并未使用差值做权重），这样就得到了非Y’的其他分量。
 
 
 
@@ -3596,6 +3980,59 @@ visibility buffer还可以和G-Buffer完成结合，第一遍pass仍然是visibi
 
 ![image-20231221105222313](C++.assets/image-20231221105222313.png)
 
+
+
+## 后处理
+
+### 高质量Bloom
+
+1. downSample=>快速模糊
+
+2. 叠加mipmap
+3. 上采样=>模糊去除pattern
+
+![image-20240105170714261](C++.assets/image-20240105170714261.png)
+
+* **降采样实现**
+
+```cpp
+float3 GaussNxN(sampler2D tex, float2 uv, int n, float2 stride, float sigma)
+{
+    float3 color = float3(0, 0, 0);
+    int r = n / 2;
+    float weight = 0.0;
+
+    for(int i=-r; i<=r; i++)
+    {
+        for(int j=-r; j<=r; j++)
+        {
+            float w = GaussWeight2D(i, j, sigma);
+            float2 coord = uv + float2(i, j) * stride;
+            color += tex2D(tex, coord).rgb * w;
+            weight += w;
+        }
+    }
+
+    color /= weight;
+    return color;
+}
+
+float4 frag (v2f i) : SV_Target
+{
+    float4 color = float4(0,0,0,1);
+    float2 uv = i.uv;
+    float2 stride = _MainTex_TexelSize.xy;   // 上一级 mip 纹理的 texel size
+
+    color.rgb = GaussNxN(_MainTex, uv, _downSampleBlurSize, stride, _downSampleBlurSigma);
+
+    return color;
+}
+```
+
+
+
+
+
 ## GPU Driven
 
 ### **nanite管线**
@@ -3766,6 +4203,22 @@ AABB：  AABB是应用最早的包围盒。它被定义为包含该对象，且�
 
 
 ## 数学
+
+### 基础
+
+* **向量叉乘**
+
+![image-20240102153446354](C++.assets/image-20240102153446354.png)
+
+![image-20240102153453680](C++.assets/image-20240102153453680.png)
+
+* **向量点乘**
+
+![image-20240102153553116](C++.assets/image-20240102153553116.png)
+
+
+
+
 
 ### 蒙特卡罗积分与重要性采样
 
@@ -4538,8 +4991,6 @@ float b = texture2D(input_texture, TexCoords - (3 * offset)).b;
 
 #### Vignette (晕影效果)
 
-
-
 ![image-20231126154619961](C++.assets\image-20231126154619961.png)
 
 设定一默认颜色黑色，根据uv和中心点之间的距离，给不同的mix权重，在中心点mix就比较大，采样结果输入图像对应结果，对于比较远的边缘的点，mix结果比较小，黑色占比比较大，实现了这种晕影效果
@@ -5178,54 +5629,115 @@ bool isPalindrome(ListNode* head) {
 
 
 
-## 排序
+* **两个链表的第一个公共节点**
 
-* **快速排序**
+![image-20240103225840758](C++.assets/image-20240103225840758.png)
+
+显然第一个公共结点为`8`，但是链表`A`头结点到`8`的长度为`2`，链表`B`头结点到`8`的长度为`3`，显然不好办？
+如果我们能够制造一种理想情况，如下：
+
+![image-20240103225852598](C++.assets/image-20240103225852598.png)
+
+这里先假设链表`A`头结点与结点`8`的长度 与 链表`B`头结点与结点`8`的长度相等，那么就可以用双指针。
+
+1. 初始化：指针`ta`指向链表`A`头结点，指针`tb`指向链表`B`头结点
+2. 如果`ta == tb`， 说明找到了第一个公共的头结点，直接返回即可。
+3. 否则，`ta != tb`，则`++ta，++tb`
+
+所以现在的问题就变成，如何让本来长度不相等的变为相等的？
+假设链表`A`长度为`a`， 链表`B`的长度为`b`，此时`a != b`
+但是，`a+b == b+a`
+因此，可以让a+b作为链表A的新长度，b+a作为链表B的新长度。
+如图：
+
+![image-20240103225907234](C++.assets/image-20240103225907234.png)
+
+这样，长度就一致了，可以用上述的双指针解法了。
+
+
 
 ```cpp
 class Solution {
 public:
-    void quickSort(vector<int>& vec, int left, int right) {
-        if (left >= right)
-            return;
-        int l = left;
-        int r = right;
-        
-        int index = rand() % (right - left + 1);
-        swap(vec[left + index], vec[left]);
-        int privot = vec[left++];
-
-        while (left <= right)
-        {
-            while (left <= right && vec[right] >= privot) {
-                --right;
-            }
-
-            while (left <= right && vec[left] <= privot)
-            {
-                ++left;
-            }
-            if (left < right) {
-                swap(vec[left], vec[right]);
-            }
+    ListNode* FindFirstCommonNode( ListNode* pHead1, ListNode* pHead2) {
+        ListNode *ta = pHead1, *tb = pHead2;
+        while (ta != tb) {
+            ta = ta ? ta->next : pHead2;
+            tb = tb ? tb->next : pHead1;
         }
-        swap(vec[l], vec[right]);
-        
-        int leftPivot = right - 1;
-        int rightPivot = right + 1;
-        // 优化二
-        while(leftPivot >= l && vec[leftPivot] == vec[right]) leftPivot--;
-        while(rightPivot <= r && vec[rightPivot] == vec[right]) rightPivot++;
-
-        quickSort(vec, l, leftPivot);
-        quickSort(vec, rightPivot, r);
-    }
-    vector<int> sortArray(vector<int>& nums) {
-        quickSort(nums, 0, nums.size() - 1);
-        return nums;
+        return ta;
     }
 };
 ```
+
+
+
+## 排序
+
+* **快速排序**
+
+  * 代码
+
+  ```cpp
+  class Solution {
+  public:
+      void quickSort(vector<int>& vec, int left, int right) {
+          if (left >= right)
+              return;
+          int l = left;
+          int r = right;
+          
+          int index = rand() % (right - left + 1);
+          swap(vec[left + index], vec[left]);
+          int privot = vec[left++];
+  
+          while (left <= right)
+          {
+              while (left <= right && vec[right] >= privot) {
+                  --right;
+              }
+  
+              while (left <= right && vec[left] <= privot)
+              {
+                  ++left;
+              }
+              if (left < right) {
+                  swap(vec[left], vec[right]);
+              }
+          }
+          swap(vec[l], vec[right]);
+          
+          int leftPivot = right - 1;
+          int rightPivot = right + 1;
+          // 优化二
+          while(leftPivot >= l && vec[leftPivot] == vec[right]) leftPivot--;
+          while(rightPivot <= r && vec[rightPivot] == vec[right]) rightPivot++;
+  
+          quickSort(vec, l, leftPivot);
+          quickSort(vec, rightPivot, r);
+      }
+      vector<int> sortArray(vector<int>& nums) {
+          quickSort(nums, 0, nums.size() - 1);
+          return nums;
+      }
+  };
+  ```
+
+  
+
+  
+
+  * 最坏情况：快速排序的最坏情况发生在选择的主元元素（pivot）导致分割的子序列极度不平衡的情况下。具体来说，当每次选择的主元都是当前子序列的最大或最小元素时，快速排序的性能将达到最差。
+
+    在这种情况下，快速排序的分割过程将会产生一个划分极度不平衡的子序列，其中一个子序列为空，另一个子序列包含了所有的剩余元素。因此，递归地对这种不平衡的子序列进行排序将导致快速排序的性能下降，并且算法的时间复杂度会达到 O(n^2)。
+
+    举例来说，如果每次选择的主元都是子序列的最大元素，那么每次划分只能减少序列的长度为 1，这种情况下的快速排序将退化为冒泡排序。
+
+    为了避免这种最坏情况的发生，可以通过选择更合适的主元元素来提高快速排序的性能。常用的方法是随机选择主元，或者选择中位数作为主元。
+
+    需要注意的是，快速排序的平均情况下的性能是 O(nlogn)，最坏情况下的性能是 O(n^2)。然而，最坏情况发生的概率较低，并且在实际应用中，快速排序通常是一种高效的排序算法。
+
+
 
 * **归并排序**
 
@@ -5570,6 +6082,265 @@ TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
 }
 ```
 
+## 栈和队列的模拟
+
+* **两个栈实现一个队列**
+
+```cpp
+#include <iostream>
+#include <stack>
+#include <exception>
+
+template<class T> class MyQueue {
+ public:
+     void push(const T& num);   // 入队列
+     T pop();   // 出队列
+     T top();
+ private:
+    std::stack<T> pushStack;
+    std::stack<T> popStack;
+};
+template<typename T>
+void MyQueue<T>::push(const T& num) {
+    pushStack.push(num);
+}
+template<typename T>
+T MyQueue<T>::pop() {
+    if (pushStack.empty() && popStack.empty()) {    // 如果二个栈都为空
+        throw std::runtime_error("queue is empty");
+    } else if (popStack.empty()) {  // 如果popStack为空,将pushStack全部元素倒popStack
+        while (!pushStack.empty()) {
+            T data = pushStack.top();   // 获取pushStack栈顶元素
+            pushStack.pop(); // 出栈
+            popStack.push(data);
+        }
+    }
+    T data = popStack.top();
+    popStack.pop();
+    return data;
+}
+template<typename T>
+T MyQueue<T>::top() {
+    if (pushStack.empty() && popStack.empty()) {    // 如果二个栈都为空
+        throw std::runtime_error("queue is empty");
+    } else if (popStack.empty()) {  // 如果popStack为空,将pushStack全部元素倒popStack
+        while (!pushStack.empty()) {
+            T data = pushStack.top();   // 获取pushStack栈顶元素
+            pushStack.pop(); // 出栈
+            popStack.push(data);
+        }
+    } else {    // 如果popStack不为空的话直接返回popStack栈顶
+        T data = popStack.top();
+        return data;
+    }
+}
+```
+
+* **两个队列实现一个栈**
+
+```cpp
+#include <iostream>
+#include <queue>
+#include <exception>
+
+template<class T> class MyStack {
+ public:
+     void push(const T& num);
+     T pop();
+     T top();
+     void swapQueue();// 交换dataQueue和helpQueue
+ private:
+    std::queue<T> dataQueue;    // 数据队列
+    std::queue<T> helpQueue;    // 帮助队列
+};
+template<typename T>
+void MyStack<T>::swapQueue() {
+    std::queue<T> tmp = dataQueue;
+    dataQueue = helpQueue;
+    helpQueue = tmp;
+}
+template<typename T>
+void MyStack<T>::push(const T& num) {   // 不管是上面情况,送入数据都是放到dataQueue里面
+    dataQueue.push(num);
+}
+template<typename T>
+T MyStack<T>::pop() {
+    if (dataQueue.empty()) {
+        throw std::runtime_error("queue is empty");
+    } else {
+        while (dataQueue.size() > 1) {  // 当dataQueue
+            helpQueue.push(dataQueue.front());
+            dataQueue.pop();
+        }
+        T res = dataQueue.front();    // 这个dataQueue的最后元素也就是stack的栈顶元素
+        dataQueue.pop();    // dataQueue已经为空,helpQueue存放n-1个数
+        swapQueue();   // 交换二个队列
+        return res;
+    }
+}
+template<typename T>
+T MyStack<T>::top() {
+    if (dataQueue.empty()) {
+        throw std::runtime_error("queue is empty");
+    } else {
+        while (dataQueue.size() > 1) {  // 当dataQueue
+            T data = dataQueue.front();
+            dataQueue.pop();
+            helpQueue.push(data);
+        }
+        T res = dataQueue.front();    // 这个dataQueue的最后元素也就是stack的栈顶元素
+        dataQueue.pop();    // 此时dataQueue已经为空,helpQueue存放n-1个数
+        helpQueue.push(res);    // 获取top元素需要将原来数据返回
+        swapQueue();
+        return res;
+    }
+}
+```
+
+## 手动实现库函数
+
+* **strcpy**
+
+```cpp
+#include <iostream>
+
+// 手动实现strcpy函数
+char* myStrcpy(char* dst, const char* src) {
+    char* original_dst = dst; // 保存目标字符串的起始地址
+
+    // 拷贝字符串内容直到遇到 '\0'
+    while (*src != '\0') {
+        *dst = *src;
+        dst++;
+        src++;
+    }
+
+    *dst = '\0'; // 在目标字符串末尾添加 '\0'，表示字符串结束
+
+    return original_dst;
+}
+
+int main() {
+    const char* source = "Hello, World!";
+    char destination[20];
+
+    myStrcpy(destination, source);
+
+    std::cout << "Copied string: " << destination << std::endl;
+    
+    return 0;
+}
+```
+
+
+
+* **memcpy**
+
+```cpp
+#include <iostream>
+
+// 手动实现memcpy函数
+void* myMemcpy(void* dst, const void* src, size_t count) {
+    char* char_dst = static_cast<char*>(dst);
+    const char* char_src = static_cast<const char*>(src);
+
+    // 逐个字节地复制数据
+    for (size_t i = 0; i < count; i++) {
+        char_dst[i] = char_src[i];
+    }
+
+    return dst;
+}
+
+int main() {
+    const char* source = "Hello, World!";
+    char destination[20];
+
+    myMemcpy(destination, source, 14);
+
+    std::cout << "Copied string: " << destination << std::endl;
+    
+    return 0;
+}
+```
+
+
+
+* **atoi**
+
+```cpp
+#include <iostream>
+
+// 手动实现atoi函数
+int myAtoi(const char* str) {
+    int result = 0;
+    int sign = 1;
+    int i = 0;
+
+    // 跳过空白字符
+    while (str[i] == ' ' || str[i] == '\t')
+        i++;
+
+    // 处理正负号
+    if (str[i] == '+' || str[i] == '-') {
+        sign = (str[i++] == '+') ? 1 : -1;
+    }
+
+    // 循环将数字字符转换为整数
+    while (str[i] >= '0' && str[i] <= '9') {
+        result = result * 10 + (str[i] - '0');
+        i++;
+    }
+
+    return sign * result;
+}
+
+int main() {
+    const char* str = "12345";
+    int number = myAtoi(str);
+    
+    std::cout << "Converted number: " << number << std::endl;
+    
+    return 0;
+}
+```
+
+* **memmov**
+
+```cpp
+// 手动实现memmove函数
+void* myMemmove(void* dst, const void* src, size_t count) {
+    char* char_dst = static_cast<char*>(dst);
+    const char* char_src = static_cast<const char*>(src);
+
+    if (char_dst < char_src) {
+        // 从前往后复制
+        for (size_t i = 0; i < count; i++) {
+            char_dst[i] = char_src[i];
+        }
+    }
+    else if (char_dst > char_src) {
+        // 从后往前复制
+        for (size_t i = count; i > 0; i--) {
+            char_dst[i - 1] = char_src[i - 1];
+        }
+    }
+
+    return dst;
+}
+
+int main() {
+    const char* source = "Hello, World!";
+    char destination[20];
+
+    myMemmove(destination, source, 14);
+
+    std::cout << "Moved string: " << destination << std::endl;
+
+    return 0;
+}
+```
+
 
 
 
@@ -5593,7 +6364,7 @@ TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
 
 * **C++优化**
 
-1. **对象池(享元)**
+1. **对象池**
 2. **预编译头**
 
 
@@ -5760,6 +6531,81 @@ Overdraw问题通常出现在由于物体的顺序或透明度不正确而导致
    - 信号是一种异步的通信方式，用于在进程之间传递简单的通知信息。例如，一个进程可以通过发送信号给另一个进程来通知它某个事件的发生。
 
 
+
+* **线程之间共享什么？不共享什么？**
+
+在同一个进程中的线程之间，它们共享以下资源：
+
+1. 内存空间：线程在同一进程的地址空间内执行，它们可以访问和修改进程的共享内存数据。
+
+2. 全局变量和静态变量：全局变量和静态变量存储在进程的数据段中，所有线程可以共享和访问这些变量。
+
+3. 文件描述符：在使用标准I/O库和系统调用打开文件时，文件描述符是进程级别的，线程可以共享文件描述符，并同时读取或写入文件。
+
+4. 进程的打开的文件：当一个文件通过某个线程打开后，其它线程可以共享文件的已打开实例。
+
+然而，线程在某些方面是独立的，它们不共享以下资源：
+
+1. 栈空间：每个线程拥有它们自己的栈空间，用于存储局部变量、函数调用和返回信息。线程之间的栈空间是相互独立的。
+
+2. 寄存器集：线程拥有自己的寄存器集，保存线程的局部变量和上下文信息。寄存器不是线程间共享的。
+
+3. 线程特定数据（Thread-specific Data，TSD）：线程特定数据是被线程局部存储（Thread-local Storage，TLS）管理的，每个线程有它们自己的线程特定数据副本。
+
+4. 线程 ID：每个线程都有一个唯一的线程 ID，用于标识和区分线程。
+
+需要注意的是，虽然线程之间共享某些资源，但在访问和修改共享资源时，需要使用适当的同步机制（例如锁、互斥量、条件变量等）来保证线程之间的安全性和互斥性。
+
+
+
+* **物理地址、虚拟地址、逻辑地址**
+
+  * **物理地址**
+
+  用于内存芯片级的单元寻址，与处理器和CPU连接的地址总线相对应。虽然可以直接把物理地址理解成插在机器上那根内存本身，把内存看成一个从0字节一直到最大空量逐字节的编号的大数组，然后把这个数组叫做物理地址，但是事实上，这只是一个硬件提供给软件的抽像，内存的寻址方式并不是这样。所以，说它是“与地址总线相对应”，是更贴切一些，不过抛开对物理内存寻址方式的考虑，直接把物理地址与物理的内存一一对应，也是可以接受的。也许错误的理解更利于形而上的抽像。
+
+  * **虚拟地址**
+
+  这是对整个内存（不要与机器上插那条对上号）的抽像描述。它是相对于物理内存来讲的，可以直接理解成“不直实的”，“假的”内存，例如，一个0x08000000内存地址，它并不对就物理地址上那个大数组中0x08000000 - 1那个地址元素；
+
+  之所以是这样，是因为现代操作系统都提供了一种内存管理的抽像，即虚拟内存（virtual memory）。进程使用虚拟内存中的地址，由操作系统协助相关硬件，把它“转换”成真正的物理地址。这个“转换”，是所有问题讨论的关键。
+
+  有了这样的抽像，一个程序，就可以使用比真实物理地址大得多的地址空间。甚至多个进程可以使用相同的地址。不奇怪，因为转换后的物理地址并非相同的。
+
+  * **逻辑地址**
+
+  Intel为了兼容，将远古时代的段式内存管理方式保留了下来。逻辑地址指的是机器语言指令中，用来指定一个操作数或者是一条指令的地址。以上例，我们说的连接器为A分配的0x08111111这个地址就是逻辑地址。
+  ——不过不好意思，这样说，好像又违背了Intel中段式管理中，对逻辑地址要求，“一个逻辑地址，是由一个段标识符加上一个指定段内相对地址的偏移量，表示为 [段标识符：段内偏移量]，也就是说，上例中那个0x08111111，应该表示为[A的代码段标识符: 0x08111111]，这样，才完整一些”
+
+* **虚拟内存**
+
+[操作系统 虚拟内存技术 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/53004596)
+
+
+
+* **32位操作系统和64位操作系统的区别**
+
+**从系统和硬件上讲**：CPU一次处理数据的能力是32位还是64位，关系着系统需要安装32位还是64位的系统
+
+
+
+* **64位和32位操作系统互换运行程序**
+
+1. 64位操作系统可以运行32位操作系统的程序。
+
+   64位系统通常具有向下兼容的能力，可以运行32位程序。现代的64位操作系统通常具有支持32位应用程序的兼容性层（Compatibility Layer）或子系统。
+
+   64位操作系统通过兼容性层来解释和执行32位指令，以便运行32位程序。兼容性层负责将32位指令转换为64位系统能够理解和执行的指令。这样，32位程序就可以在64位系统上正常运行。
+
+   需要注意的是，通过兼容性层运行32位程序可能会导致一些性能损失，因为在指令转换和执行方面可能会引入一些开销。但在大多数情况下，这种性能损失是可以忽略的。
+
+2. 32位操作系统不可以运行64位操作系统的程序。这是因为64位程序使用的指令集（Instruction Set Architecture）和32位系统支持的指令集不同。
+
+   在计算机体系结构中，指令集架构定义了处理器能够理解和执行的指令集。64位程序使用的是64位指令集，而32位系统只能理解和执行32位指令集。
+
+   64位指令集可以处理更大的内存空间，并且支持更高级的计算和数据处理指令。而32位系统只能处理32位指令集，并且有限的寻址空间。
+
+   此外，64位程序和32位程序可能还使用不同的应用程序二进制接口（Application Binary Interface，ABI）。ABI是一个定义了程序与操作系统之间通信的接口规范。64位程序和32位程序在ABI方面可能也有不兼容的差异。
 
 # 计算机组成原理
 
@@ -6131,6 +6977,28 @@ float d = _hizBuffer.mips[lod][int2(uv)].r;
    聚光源：位置就是摄像机的位置，方向也是摄像机的朝向，也要考虑衰减，同时还会有两个角度，一个内角、一个外角，中间区域为过度区域。
 
 3. **后处理渲染管线了解吗？**
+
+
+
+### 一面(2战)
+
+* **图形**
+
+1. 场景管理常用结构
+2. 阴影算法
+3. CSM
+4. 有东西跨越了CSM不同的等级怎么处理呢？(没处理)
+5. 延迟渲染
+
+
+
+* **C++**
+
+1. 复制构造能不能去除&
+2. 讲讲STL
+3. 内存泄漏的原因
+4. 如何排查内存泄漏的情况？
+5. 智能指针的原理
 
 
 
