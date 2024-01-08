@@ -8,6 +8,67 @@
 
 在 C++ 中，可以利用全局对象和静态对象的构造函数来实现在 `main()` 之前执行的代码。当程序启动时，在 `main()` 之前会自动执行所有全局对象和静态对象的构造函数。
 
+* **是谁调用了main**
+
+在C++中，`main` 函数的调用不是由用户代码直接触发的，而是由操作系统的启动代码或运行时环境负责调用。具体来说，`main` 函数的调用是由运行时库（C Runtime Library）或操作系统的启动代码实现的。
+
+当你执行一个C++程序时，操作系统会创建一个进程，并将控制权交给该进程。然后，操作系统会启动运行时环境，它会负责初始化运行时库，并准备调用 `main` 函数。运行时环境会处理与程序启动相关的工作，例如设置命令行参数、环境变量等。
+
+一旦运行时环境准备就绪，它会调用 `main` 函数并传递相应的参数（命令行参数和环境变量等），从而开始执行用户代码。在 `main` 函数执行完毕后，程序会返回到运行时环境或操作系统，最终终止程序的执行。
+
+因此，在C++中，`main` 函数的调用是由操作系统或运行时环境负责的。它是程序的入口点，标志着程序的开始执行。
+
+
+
+* **如何在Main函数前执行一段程序**
+
+在大多数编程语言中，可以在 `main` 函数之前执行一段代码，通过创建一个全局变量或者调用一个静态初始化函数来实现。下面是两个常见的方法：
+
+1. 使用全局变量：在程序的顶部声明一个全局变量，并在声明时进行初始化。由于全局变量的初始化在程序启动时就会执行，这段代码将在 `main` 函数之前执行。例如，在C语言中可以这样写：
+
+```
+#include <stdio.h>
+
+// 在 main 函数之前执行的代码
+int global_variable = init();
+
+int init() {
+    printf("在 main 函数之前执行的代码\n");
+    return 0;
+}
+
+int main() {
+    printf("在 main 函数中执行的代码\n");
+    return 0;
+}
+```
+
+2. 使用静态初始化函数：在程序的顶部声明一个静态函数，并在其中执行要在 `main` 函数之前执行的代码。然后，通过使用编译器提供的特殊属性或标记将该函数标记为静态初始化函数。这样，该函数将在 `main` 函数之前自动执行。以下是C++中的示例：
+
+```cpp
+#include <iostream>
+
+// 在 main 函数之前执行的代码
+void init() {
+    std::cout << "在 main 函数之前执行的代码" << std::endl;
+}
+
+// 使用编译器提供的特殊属性将函数标记为静态初始化函数
+// 在C++11及以上的标准中可以使用这种方式
+static void __attribute__((constructor)) before_main() {
+    init();
+}
+
+int main() {
+    std::cout << "在 main 函数中执行的代码" << std::endl;
+    return 0;
+}
+```
+
+请注意，具体的实现方式可能因编程语言和编译器而异。因此，请参考相应语言的文档或查询特定编译器的文档，以了解如何在 `main` 函数之前执行一段代码。
+
+
+
 
 
 - **函数调用的过程**
@@ -311,7 +372,7 @@ int main() {
   2. 派生类中的成员函数可以直接访问基类中的public和protected成员，但不能直接访问基类的private成员。
   3. 通过派生类的对象不能直接访问从基类继承的任何成员。
 
-![image-20240102100041872](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240102100041872.png?lastModify=1704433571)
+![image-20240102100041872](C++.assets/image-20240102100041872.png?lastModify=1704433571)
 
 
 
@@ -419,7 +480,7 @@ C++中的虚函数表（Virtual Function Table，简称vtable）是用于实现�
 
 C++库中就有这样的例子：
 
-![image-20240102165531984](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240102165531984.png?lastModify=1704433571)
+![image-20240102165531984](C++.assets/image-20240102165531984.png?lastModify=1704433571)
 
 
 
@@ -437,7 +498,7 @@ C++内存模型主要包含以下内容：
 
 编译器会在虚函数表 vftable 的开头插入一个指针，指向当前类对应的 type_info 对象。当程序在运行阶段获取类型信息时，可以通过对象指针 p 找到虚函数表指针 vfptr，再通过 vfptr 找到 type_info 对象的指针，进而取得类型信息。
 
-![image-20231205234029598](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205234029598.png?lastModify=1704433571)
+![image-20231205234029598](C++.assets/image-20231205234029598.png?lastModify=1704433571)
 
 - **C++ RAII（**R**esource** A**cquisition** I**s** I**nitialization）**
 
@@ -711,7 +772,7 @@ delete/new 不配对，发生异常导致delete/new运行不配对， 数组的�
 
 - **shared_ptr之间的相互引用问题**
 
-![image-20231211202531146](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231211202531146.png?lastModify=1704433571)
+![image-20231211202531146](C++.assets/image-20231211202531146.png?lastModify=1704433571)
 
 
 
@@ -877,11 +938,11 @@ C++11引入了`enum class`（也称为枚举类或强类型枚举）来解决传
 
 防止代码冗余。原本的话每一个模板在调用的时候都会实例化一份，实例化以后就只有一份生成。
 
-![image-20231216105805195](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231216105805195.png?lastModify=1704433571)
+![image-20231216105805195](C++.assets/image-20231216105805195.png?lastModify=1704433571)
 
 
 
-![image-20231216105839971](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231216105839971.png?lastModify=1704433571)
+![image-20231216105839971](C++.assets/image-20231216105839971.png?lastModify=1704433571)
 
 
 
@@ -1396,7 +1457,7 @@ STL中的容器（如vector、list、map等）提供了封装数据和操作的�
 
   容器、迭代器、算法、适配器、空间分配器、仿函式
 
-  ![image-20231206085740904](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206085740904.png?lastModify=1704433571)
+  ![image-20231206085740904](C++.assets/image-20231206085740904.png?lastModify=1704433571)
 
   - 容器：各种数据结构，vector、list、deque、set、map
   - 算法：各种常用算法，包含了初始化、排序、搜索、转换等等
@@ -1503,7 +1564,7 @@ list底层是一个循环双向链表。
 
 ​		双向队列，**通过建立 map 数组，deque 容器申请的这些分段的连续空间就能实现“整体连续”的效果**。
 
-![image-20231206113445969](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206113445969.png?lastModify=1704433571)
+![image-20231206113445969](C++.assets/image-20231206113445969.png?lastModify=1704433571)
 
 - **分段连续的好处**
 
@@ -1524,11 +1585,11 @@ list底层是一个循环双向链表。
 
 插入元素的时候**自底向上**完成调整操作
 
-![image-20231217170253006](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231217170253006.png?lastModify=1704433571)
+![image-20231217170253006](C++.assets/image-20231217170253006.png?lastModify=1704433571)
 
 删除元素的时候 **自顶向下**完成调整操作
 
-![image-20231217170308061](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231217170308061.png?lastModify=1704433571)
+![image-20231217170308061](C++.assets/image-20231217170308061.png?lastModify=1704433571)
 
 
 
@@ -1538,7 +1599,7 @@ list底层是一个循环双向链表。
 
 - **红黑树原则**
 
-![image-20231216215951800](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231216215951800.png?lastModify=1704433571)
+![image-20231216215951800](C++.assets/image-20231216215951800.png?lastModify=1704433571)
 
 1. 节点分为红色或者黑色；
 2. 根节点必为黑色；
@@ -1659,7 +1720,7 @@ int main() {
   3. 堆排序：在堆调整的过程中，元素会发生交换，打破它们在原始数组中的相对顺序。
   4. 快速排序：快速排序之所以不稳定，主要是由于在分区过程中对相等元素的处理可能导致它们的相对顺序改变。
 
-![image-20231206114912470](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206114912470.png?lastModify=1704433571)
+![image-20231206114912470](C++.assets/image-20231206114912470.png?lastModify=1704433571)
 
 
 
@@ -1851,7 +1912,7 @@ The*zero-overhead principle*C++ 设计原则指出：
   - 汇编阶段将汇编文件转换成机器码，生成可重定位目标文件（.obj文件）（汇编器是将汇编代码转变成机器可以执行的命令，每一个汇编语句几乎都对应一条机器指令。汇编相对于编译过程比较简单，根据汇编指令和机器指令的对照表一一翻译即可
   - 链接阶段，将多个目标文件和所需要的库连接成可执行文件（.exe文件）
 
-![image-20231206115945016](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206115945016.png?lastModify=1704433571)
+![image-20231206115945016](C++.assets/image-20231206115945016.png?lastModify=1704433571)
 
 - **静态库与动态库**
 
@@ -2034,23 +2095,23 @@ Singleton Singleton::m_instance; // 在程序入口之前就完成单例对象�
 - 该模式用来封装和管理类的创建，终极目的是为了解耦，实现创建者和调用者的分离。
 - **简单工厂**
 
-![image-20231206202155772](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206202155772.png?lastModify=1704433571)
+![image-20231206202155772](C++.assets/image-20231206202155772.png?lastModify=1704433571)
 
 
 
 - **工厂方法**
 
-![image-20231206202215318](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206202215318.png?lastModify=1704433571)
+![image-20231206202215318](C++.assets/image-20231206202215318.png?lastModify=1704433571)
 
 - **抽象工厂**
 
-![image-20231206202426779](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206202426779.png?lastModify=1704433571)
+![image-20231206202426779](C++.assets/image-20231206202426779.png?lastModify=1704433571)
 
 ## 观察者模式
 
 - 又叫发布-订阅模式（Publish/Subscribe），定义对象间一种一对多的依赖关系，使得每当一个对象改变状态，则所有依赖于它的对象都会得到通知并自动更新。该模式属于行为型模式。
 
-  ![image-20231206202555636](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206202555636.png?lastModify=1704433571)
+  ![image-20231206202555636](C++.assets/image-20231206202555636.png?lastModify=1704433571)
 
 # 图形学
 
@@ -2072,13 +2133,13 @@ a. 顶点处理阶段：这个阶段会执行**顶点变换**和**顶点着色**
 
 b. 裁剪阶段：对部分不在视体内部的图元进行裁剪。这部分是几乎完全由硬件控制的，因此没必要详细描述，至于为什么有了视锥剔除，到这个阶段还需要进行一次裁剪，可参考这个问题[为什么在ndc归一化坐标已经包含了视锥体剔除功能的情况下 还需要视锥体裁剪？ - 知乎 (zhihu.com)](https://www.zhihu.com/question/304277310/answer/562221670)。简单来说就是两次裁剪的粒度不同，前者是在物体对象层面的，一般对对象的包围盒做剔除，剔除掉不在视锥体内的物体，NDC裁剪是在三角形层面做的，裁剪掉不在屏幕内的像素。
 
-![image-20231211220507817](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231211220507817.png?lastModify=1704433571)
+![image-20231211220507817](C++.assets/image-20231211220507817.png?lastModify=1704433571)
 
 c. 屏幕映射阶段：主要目的是将之前步骤得到的坐标映射到对应的屏幕坐标系上。
 
 （3）光栅化阶段，包含三角形设置和三角形遍历阶段。
 
-![image-20231211220538518](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231211220538518.png?lastModify=1704433571)
+![image-20231211220538518](C++.assets/image-20231211220538518.png?lastModify=1704433571)
 
 a. 三角形设置(图元装配)，计算出三角形的一些重要数据(如三条边的方程、深度值等)以供三角形遍历阶段使用，这些数据同样可用于各种着色数据的插值。
 
@@ -2094,7 +2155,7 @@ b. 测试合并，包括各种测试和混合操作，如裁剪测试、透明�
 
 （5）**各个阶段的可控性**
 
-![image-20231211220654478](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231211220654478.png?lastModify=1704433571)
+![image-20231211220654478](C++.assets/image-20231211220654478.png?lastModify=1704433571)
 
 
 
@@ -2146,7 +2207,7 @@ early-Z就是提前进行深度测试，剔除不可见的片段，以提高渲�
 
 首先确定什么是背面？如何定义的？ 例如OpenGL在渲染图元的时候将使用这个信息来决定一个三角形是一个正向三角形还是背向三角形。默认情况下，逆时针顶点所定义的三角形将会被处理为正向三角形。
 
-![image-20231216222021114](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231216222021114.png?lastModify=1704433571)
+![image-20231216222021114](C++.assets/image-20231216222021114.png?lastModify=1704433571)
 
 
 
@@ -2403,7 +2464,7 @@ vec3 normal = normalize(cross(leftDir,upDir))
 
   IMR (Immediate Mode Rendering)是 PC 和主机 GPU 使用的渲染方式，是指：每一次渲染API的调用，都会直接绘制图形对象。因此，每一次物体颜色和深度的渲染，都要读写Frame Buffer和Depth Buffer (深度缓冲)。
 
-  ![image-20231214220245377](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214220245377.png?lastModify=1704433571)
+  ![image-20231214220245377](C++.assets/image-20231214220245377.png?lastModify=1704433571)
 
   1. 上半部分：渲染管线
   2. 下半部分：涉及到的显存数据，包括几何数据、纹理数据、Depth Buffer (深度缓冲)、Frame Buffer
@@ -2422,7 +2483,7 @@ vec3 normal = normalize(cross(leftDir,upDir))
 
 具体实现上是：渲染时，直接渲染对象不再是当前的Frame Buffer和Depth Buffer (深度缓冲)，而是叫Tile Buffer的高速缓存。从而将IMR (Immediate Mode Rendering)中对Color/Depth Buffer进行的读写操作，改为对GPU中高速内存的读写操作。具体如下图所示：
 
-![image-20231214221217319](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214221217319.png?lastModify=1704433571)
+![image-20231214221217319](C++.assets/image-20231214221217319.png?lastModify=1704433571)
 
 上图有3层结构：
 
@@ -2470,7 +2531,7 @@ Rasterization (光栅化)会等所有的三角形完成第1阶段，才进入第
 
 其实只有PowerVR的GPU是TBDR架构，别的移动GPU是TBR架构。因为TBDR这个架构是PowerVR提出来的对TBR的一次改进，在TBR的基础上再加了一个Deferred。
 
-![image-20231214223251046](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214223251046.png?lastModify=1704433571)
+![image-20231214223251046](C++.assets/image-20231214223251046.png?lastModify=1704433571)
 
 我们可以看到PowerVR在绘制管线中新增了一个阶段，叫做HSR & Depth Test，
 
@@ -2498,35 +2559,35 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
 
 - 辐射能(Radiant energy)Q：电磁辐射的能量，单位是J
 
-![image-20231210103842393](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210103842393.png?lastModify=1704433571)
+![image-20231210103842393](C++.assets/image-20231210103842393.png?lastModify=1704433571)
 
 - 辐射通量(Radiant flux)或功率(power)\phi:单位时间释放、反射、投射、或者接受的能量。单位是W或者lm
 
-![image-20231210104030062](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210104030062.png?lastModify=1704433571)
+![image-20231210104030062](C++.assets/image-20231210104030062.png?lastModify=1704433571)
 
 - 辐射强度(Radiant Intensity):辐射强度是单位立体角(solid angle)由点光源发出的功率（power）。
 
-![image-20231210104854620](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210104854620.png?lastModify=1704433571)
+![image-20231210104854620](C++.assets/image-20231210104854620.png?lastModify=1704433571)
 
 各向同性点源：
 
-![image-20231210105007878](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210105007878.png?lastModify=1704433571)
+![image-20231210105007878](C++.assets/image-20231210105007878.png?lastModify=1704433571)
 
 - 辐照度(Irradiance)
 
 辐照度就是每(垂直投影)单位面积入射到一个表面上一点的辐射通量。
 
-![image-20231210105442827](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210105442827.png?lastModify=1704433571)
+![image-20231210105442827](C++.assets/image-20231210105442827.png?lastModify=1704433571)
 
 兰伯特余弦定律：**表面辐照度**与**光方向和表面法线夹角的余弦值**成**正比**(也就是说只要在表面法线方向的的辐射度分量)。
 
-![image-20231210105502510](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210105502510.png?lastModify=1704433571)
+![image-20231210105502510](C++.assets/image-20231210105502510.png?lastModify=1704433571)
 
 
 
 - 辐射(Radiance)：是指一个表面在**每单位立体角、每单位投影面积**上所发射(emitted)、反射(reflected)、透射(transmitted)或接收(received)的**辐射通量(功率)**。
 
-![image-20231210105541112](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210105541112.png?lastModify=1704433571)
+![image-20231210105541112](C++.assets/image-20231210105541112.png?lastModify=1704433571)
 
 **辐射强度(Radiant Intensity)、辐照度(Irradiance)、辐射(Radiance)三者关系：**
 
@@ -2538,11 +2599,11 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
 
 **入射辐射**(Incident Radiance)：指**到达表面的单位立体角**的**辐照度**。即它是沿着给定光线到达表面的光(入射方向指向表面)
 
-![image-20231210105622965](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210105622965.png?lastModify=1704433571)
+![image-20231210105622965](C++.assets/image-20231210105622965.png?lastModify=1704433571)
 
 **出射辐射**(Exiting Radiance)：**离开表面**的**单位投影面积**的**辐射强度**。例如：对于面光(area light)，它是沿着给定光线发射的光(出射方向指向表面)
 
-![image-20231210105640778](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210105640778.png?lastModify=1704433571)
+![image-20231210105640778](C++.assets/image-20231210105640778.png?lastModify=1704433571)
 
 ### **辐照度**(Irradiance) **VS. 辐射**(Radiance)
 
@@ -2550,7 +2611,7 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
 
 辐射： 在面积dA 、方向dw 上的辐射通量
 
-![image-20231210105746031](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210105746031.png?lastModify=1704433571)
+![image-20231210105746031](C++.assets/image-20231210105746031.png?lastModify=1704433571)
 
 ### BRDF
 
@@ -2558,13 +2619,13 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
 
 双向反射分布函数(Bidirectional Reflectance Distribution Function)，是一个用来描述物体表面如何反射光线的方程，表示了给定一条入射光的时候，某一条特定的出射光线的性质是怎么样的。定义的是出射辐射率(Radiance)的微分和入射光辐射度(Irradiance)的微分之比。
 
-![image-20231212150906539](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212150906539.png?lastModify=1704433571)
+![image-20231212150906539](C++.assets/image-20231212150906539.png?lastModify=1704433571)
 
 入射光找到物体表面上，反射光线为v，那么反射光的亮度(辐射率)和入射光的能量(辐照度)会成一个比例，这个比例就是BRDF，可以理解为，在某一个特定角度观看某个点时，各个方向的入射光对该点的最终光亮度产生的贡献比例。
 
-![image-20231212151320385](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212151320385.png?lastModify=1704433571)
+![image-20231212151320385](C++.assets/image-20231212151320385.png?lastModify=1704433571)
 
-![image-20231212151334076](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212151334076.png?lastModify=1704433571)
+![image-20231212151334076](C++.assets/image-20231212151334076.png?lastModify=1704433571)
 
 
 
@@ -2576,11 +2637,11 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
 
 1. **整体公式**
 
-![image-20231212154544849](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212154544849.png?lastModify=1704433571)
+![image-20231212154544849](C++.assets/image-20231212154544849.png?lastModify=1704433571)
 
 1. **镜面反射部分**
 
-![image-20231212154939627](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212154939627.png?lastModify=1704433571)
+![image-20231212154939627](C++.assets/image-20231212154939627.png?lastModify=1704433571)
 
 - **法线分布函数**：估算在受到表面粗糙度的影响下，朝向方向与半程向量一致的微平面的数量。这是用来估算微平面的主要函数。
 - **几何函数**：描述了微平面自成阴影的属性。当一个平面相对比较粗糙的时候，平面表面上的微平面有可能挡住其他的微平面从而减少表面所反射的光线。
@@ -2590,7 +2651,7 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
 
 #### Disney Principled BRDF
 
-![image-20231214213308684](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214213308684.png?lastModify=1704433571)
+![image-20231214213308684](C++.assets/image-20231214213308684.png?lastModify=1704433571)
 
 如上图所示，Disney BRDF有11项用于调节材质外观的参数，它们分别是：
 
@@ -2620,9 +2681,9 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
 
 含义：在某个视点看向特定的位置x，看到的出射光亮度(辐照率)Lo等于x点自发光亮度Le(辐射率)以及该点的反射光亮度之和，可以由以下公式表示：
 
-![image-20231212151626025](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212151626025.png?lastModify=1704433571)
+![image-20231212151626025](C++.assets/image-20231212151626025.png?lastModify=1704433571)
 
-![image-20231212151641104](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212151641104.png?lastModify=1704433571)
+![image-20231212151641104](C++.assets/image-20231212151641104.png?lastModify=1704433571)
 
 
 
@@ -2643,13 +2704,13 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
   - **菲涅尔反射：**光线从不同角度入射有不同的反射率。相同的入射角度，不同的物质也会有不同的反射率。F0是即0度角入射的菲涅尔反射值。大多数非金属的F0范围是0.020.04，大多数金属的F0范围是0.71.0。
   - **线性空间：**光照计算必须要在线性空间完成。shader中输入的gamma空间的贴图比如漫反射贴图需要被转换成线性空间，在具体操作时需要根据不同引擎和渲染器的不同做不同的操作；而描述物体表面属性的贴图，粗糙度、高光贴图、金属贴图等必须是线性空间。
   - **色调映射：**是将宽范围的照明级别拟合到屏幕有限色域内的过程，因为基于HDR渲染出来的亮度可能会超过显示器的最大亮度，所以需要色调映射，将光照结果从HDR转换到LDR。
-  - **物体的光学特性：**现实世界中有不同类型的物质可分为三大类：绝缘体（Insulators），半导体（semi-conductors）和导体（conductors）。在渲染和游戏领域，我们一般只对其中的两个感兴趣：导体（金属）和绝缘体（电解质，非金属）。其中非金属具有单色/灰色镜面反射颜色。而金属具有彩色的镜面反射颜色。即非金属的F0是一个float。而金属的F0是一个float3，如下图。 ![image-20231212153133884](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212153133884.png?lastModify=1704433571)
+  - **物体的光学特性：**现实世界中有不同类型的物质可分为三大类：绝缘体（Insulators），半导体（semi-conductors）和导体（conductors）。在渲染和游戏领域，我们一般只对其中的两个感兴趣：导体（金属）和绝缘体（电解质，非金属）。其中非金属具有单色/灰色镜面反射颜色。而金属具有彩色的镜面反射颜色。即非金属的F0是一个float。而金属的F0是一个float3，如下图。 ![image-20231212153133884](C++.assets/image-20231212153133884.png?lastModify=1704433571)
 
 - **PBR的范畴**
 
 
 
-![image-20231212153554834](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212153554834.png?lastModify=1704433571)
+![image-20231212153554834](C++.assets/image-20231212153554834.png?lastModify=1704433571)
 
 #### **PBR Material**
 
@@ -2659,29 +2720,29 @@ PowerVR架构最大的创新就在于完全解决了overdraw问题，且不用�
 
 PBR的光照可以通过反射方程来计算，分为两步，一部分是漫反射，一部分是镜面反射，如下图的公式所示：
 
-![image-20231212155407631](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212155407631.png?lastModify=1704433571)
+![image-20231212155407631](C++.assets/image-20231212155407631.png?lastModify=1704433571)
 
-![image-20231212155322680](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212155322680.png?lastModify=1704433571)
+![image-20231212155322680](C++.assets/image-20231212155322680.png?lastModify=1704433571)
 
 - 漫反射部分的f_{lambert}是一个常数，直接积分就可以了。通过环境立方贴图来获取每一个方向的radiance，然后对于每一个出射方向的积分结果存储到一张辐照度贴图中(对radiance)的卷积，在实时渲染中直接采样出射方向就可以得到积分结果。
 
-![image-20231212163246436](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212163246436.png?lastModify=1704433571)
+![image-20231212163246436](C++.assets/image-20231212163246436.png?lastModify=1704433571)
 
 
 
 根据离散公式，均匀采样求结果平均值，公式转化为离散版本：
 
-![image-20231212163452213](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212163452213.png?lastModify=1704433571)
+![image-20231212163452213](C++.assets/image-20231212163452213.png?lastModify=1704433571)
 
 
 
 - 镜面反射部分比较麻烦，先用分割近似求和的方法，将积分划分为两个卷积式子：
 
-![image-20231212160351576](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212160351576.png?lastModify=1704433571)
+![image-20231212160351576](C++.assets/image-20231212160351576.png?lastModify=1704433571)
 
 第一部分是预滤波环境贴图，将不同粗糙度的卷积结果存到不同的mipmap中(不同粗糙度对着不同的mipmap级别，处于中间的粗糙度可以插值)。同时还做了假设镜面反射方向——总是等于输出采样方向w_0。
 
-![image-20231212163802457](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212163802457.png?lastModify=1704433571)
+![image-20231212163802457](C++.assets/image-20231212163802457.png?lastModify=1704433571)
 
 所有可能出射的反射光构成的形状称为镜面波瓣。随着粗糙度的增加，镜面波瓣的大小增加；随着入射光方向不同，形状会发生变化。因此，镜面波瓣的形状高度依赖于材质。 在微表面模型里给定入射光方向，则镜面波瓣指向微平面的半向量的反射方向。考虑到大多数光线最终会反射到一个基于半向量的镜面波瓣内，采样时以类似的方式选取采样向量是有意义的，因为大部分其余的向量都被浪费掉了，这个过程称为重要性采样。
 
@@ -2689,13 +2750,13 @@ PBR的光照可以通过反射方程来计算，分为两步，一部分是漫�
 
 第二部分是BRDF部分，他可以进一步拆分为跟菲涅尔项相关的两部分，分别代表菲涅尔相应的比例和偏差，然后对这两项做卷积预运算，并存储到一张查找贴图中(look-up texture, LUT)。渲染时可以将n·wi作为横坐标，以粗糙度roughness作为纵坐标，去LUT中采样获得该条件下的BRDF响应结果，以加快计算速度。
 
-![image-20231212164948931](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212164948931.png?lastModify=1704433571)
+![image-20231212164948931](C++.assets/image-20231212164948931.png?lastModify=1704433571)
 
-![image-20231212165005134](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212165005134.png?lastModify=1704433571)
+![image-20231212165005134](C++.assets/image-20231212165005134.png?lastModify=1704433571)
 
 
 
-![image-20231212165301142](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212165301142.png?lastModify=1704433571)
+![image-20231212165301142](C++.assets/image-20231212165301142.png?lastModify=1704433571)
 
 
 
@@ -2709,11 +2770,11 @@ PBR的光照可以通过反射方程来计算，分为两步，一部分是漫�
 
 1. D：表示的是微表面结构中法线分布函数，它描述了光线以多大的概率在不同方向上的散射。业界常用的法线分布函数是GGX，具有更好的高光长尾
 
-   ![image-20231212153920593](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212153920593.png?lastModify=1704433571)
+   ![image-20231212153920593](C++.assets/image-20231212153920593.png?lastModify=1704433571)
 
 2. F：菲涅尔项，表示的是光线在材质表面与介质之间的反射和折射的行为，掠视金属时反射较多的光而俯视时反射光较少
 
-   ![image-20231212154008402](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212154008402.png?lastModify=1704433571)
+   ![image-20231212154008402](C++.assets/image-20231212154008402.png?lastModify=1704433571)
 
 3. G：表示的是几何遮蔽的情况，返回一个未被遮蔽的表面的百分比，常用GGX模型，通过史密斯法叠加入射和出射两个方向。
 
@@ -2760,7 +2821,7 @@ Games101：
 
 任何一个像素都可以映射到纹理上的一个区域，那么怎么计算要应用的Mipmap层级呢？一个简单的微分思想：看一个像素在屏幕空间的两个方向上的变化，对应在像素空间两个方向上的变化-取两个方向上变化的较大值，近似为当前像素在纹理空间覆盖的方形区域的边长，此时对应的mipmap level =  log_2L (如果L = 1，那么刚好使用原始那张图，如果L= 4，**那么在第2层 会对应1个像素**），也就是说，在第 log_2L层会对应到一个像素，只要在该层去查这一个像素就行，这算mipmap 很巧妙的一个地方
 
-![image-20231214202736334](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214202736334.png?lastModify=1704433571)
+![image-20231214202736334](C++.assets/image-20231214202736334.png?lastModify=1704433571)
 
 光栅化的过程中，GPU是并行处理很多Fragement pixel的，但是，并不是一个pixel处理，而是分成2*2的块来处理；GPU中有求偏导的ddx 和ddy函数，以UV为变量的时候，求出来的值就是相邻像素之间的uv差；
 
@@ -2770,7 +2831,7 @@ GPU是得到pixel相邻的像素之间最大UV差的大小，再取对数，得�
 
 - **法线贴图及其他贴图的作用**
 
-![image-20231212213133354](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212213133354.png?lastModify=1704433571)
+![image-20231212213133354](C++.assets/image-20231212213133354.png?lastModify=1704433571)
 
 - **说一下双线性插值和三线性插值**
 
@@ -2784,11 +2845,11 @@ GPU是得到pixel相邻的像素之间最大UV差的大小，再取对数，得�
 
     
 
-  ![image-20231214190201428](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214190201428.png?lastModify=1704433571)
+  ![image-20231214190201428](C++.assets/image-20231214190201428.png?lastModify=1704433571)
 
   - **三线性插值**
 
-  ![image-20231214190317315](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214190317315.png?lastModify=1704433571)
+  ![image-20231214190317315](C++.assets/image-20231214190317315.png?lastModify=1704433571)
 
 ```
 a = lerp(c000,c100,tx)
@@ -2805,7 +2866,7 @@ d = lerp(c011,c111,tx)
 
 另外一类压缩算法就是手机上使用的压缩算法，使用较多的就是ASTC算法。ASTC压缩的分块就不再是严格的4×4了，它可以使用任意的形状，而且ASTC的压缩效果是最好的，解压缩的效率也不低。然而，ASTC算法压缩时的性能消耗较大，因此无法在运行中进行压缩。总而言之，对于计算机的渲染系统来说，纹理压缩的基本逻辑都是按照这个思想来进行压缩的。
 
-![image-20231214110325731](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214110325731.png?lastModify=1704433571)
+![image-20231214110325731](C++.assets/image-20231214110325731.png?lastModify=1704433571)
 
 ### 法线贴图
 
@@ -2867,7 +2928,7 @@ d = lerp(c011,c111,tx)
 
 2. 仍然只存xy方向，它的模取z值，这样z也会被插值，重构的时候误差小一点。(CryEngine3)
 
-   ![image-20240104110258073](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240104110258073.png?lastModify=1704433571)
+   ![image-20240104110258073](C++.assets/image-20240104110258073.png?lastModify=1704433571)
 
 3. **Stereographic Projection**
 
@@ -2875,13 +2936,13 @@ d = lerp(c011,c111,tx)
 
    
 
-   ![image-20240104114403707](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240104114403707.png?lastModify=1704433571)
+   ![image-20240104114403707](C++.assets/image-20240104114403707.png?lastModify=1704433571)
 
 4. **Spheremap Transform**
 
 这个方法在测图学的名字叫Lambert azimuthal equal-area projection，主要思路是选取一个南极点，然后找到以南极点为圆心，过球上的一点，且垂直于绘图平面的唯一确定的圆，然后圆与绘图平面相交的点，就是球面映射到绘图平面的点：
 
-![image-20240104114509433](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240104114509433.png?lastModify=1704433571)
+![image-20240104114509433](C++.assets/image-20240104114509433.png?lastModify=1704433571)
 
 
 
@@ -2895,7 +2956,7 @@ d = lerp(c011,c111,tx)
 
 首先，它使用了Spheremap Transform的方式压缩normal（16bit），然后使用了Y'CbCr的颜色编码（32bit），外加一个Metallic（8bit）和Roughness（8bit），所以，总共的信息量应该是64bit。压缩过程是这样的，判断当前pixel坐标x,y是否同奇偶，然后按以下规则存储：
 
-![image-20240104111823833](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240104111823833.png?lastModify=1704433571)
+![image-20240104111823833](C++.assets/image-20240104111823833.png?lastModify=1704433571)
 
 这样，当前像素就会于十字相邻的像素存储不同的信息。但是，每个像素都会存着Y'，也就是亮度信息，由于亮度信息是高频信息，如果用周围像素来还原是误差比较大的。这是编码过程，解码过程是通过使用Y'做判断，是否差值小于某个阈值，如果小于就考虑在内，如果不小于就放弃，然后将被考虑在内的像素值加起来取平均（并未使用差值做权重），这样就得到了非Y’的其他分量。
 
@@ -2905,7 +2966,7 @@ d = lerp(c011,c111,tx)
 
 这个概念取自于Virtual Memory,与虚拟内存类似的是，一个很大的Texture将不会全部加载到内存中，而是根据实际需求，将需要的部分加载。与虚拟内存不同的是，它不会阻塞执行，可以使用更高的mipmap来暂时显示，它对基于block的压缩贴图有很好的支持。 基本思路是，会将纹理的mipmap chain分割为相同大小的tile或page,这里的纹理叫虚纹理，然后通过某种映射，映射到一张内存中存在的纹理，这里的纹理是物理纹理，在游戏视野发生变化的时候，一部分物理纹理会被替换出去，一部分物理纹理会被加载。
 
-![image-20231214095101655](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214095101655.png?lastModify=1704433571)
+![image-20231214095101655](C++.assets/image-20231214095101655.png?lastModify=1704433571)
 
 虚拟纹理是一种以时间换空间的纹理流送技术，他最大的好处在于我们能够使用多种高分辨率纹理，而不像传统流送一样受到内存和带宽的限制。
 
@@ -2921,7 +2982,7 @@ d = lerp(c011,c111,tx)
 
 ### 局部光照模型
 
-![image-20231205114043434](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205114043434.png?lastModify=1704433571)
+![image-20231205114043434](C++.assets/image-20231205114043434.png?lastModify=1704433571)
 
 在真实感图形学中，进处理光源直接照射物体表面的光照模型被称为局部光照模型。
 
@@ -2947,7 +3008,7 @@ Phong模型由三种反射光组成，反别是漫反射光，环境光，镜面
 
 Phong模型会有一个问题，在镜面反射会在一些情况下出现问题，特别是物体反光度低的时候，会导致大片的高光区域，会出现断层的情况，这是因为观察向量和反射向量之间的夹角不能大于90°，如果点积为负数，镜面光分量会变成0.0，
 
-![image-20231205115226353](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205115226353.png?lastModify=1704433571)
+![image-20231205115226353](C++.assets/image-20231205115226353.png?lastModify=1704433571)
 
 - **Blin-phong模型**
 
@@ -2957,7 +3018,7 @@ Blin-Phong模型在计算高光的时候，选择用半程向量与法线的夹�
 
 Cook-Torrance模型兼顾漫反射和镜面反射两个部分。
 
-![image-20231205115712576](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205115712576.png?lastModify=1704433571)
+![image-20231205115712576](C++.assets/image-20231205115712576.png?lastModify=1704433571)
 
 这里的 k_d是早先提到过的入射光线中**被折射**部分的能量所占的比率，而 k_s 是**被反射**部分的比率。BRDF的左侧表示的是漫反射部分，这里用 f_{lambert}来表示。它被称为Lambertian漫反射。
 
@@ -3005,7 +3066,7 @@ G：几何自遮挡项，考虑的是微表面之间的相互作用，当一个�
 
 可实现直接光照、镜面反射和折射效果。从摄像机出发发射光纤，打到世界空间最近的物体，找到着色点，着色点向光源发射一条阴影线以寻找焦点，如果交点存在，则意味着物体被挡住了，该着色点处于阴影之中，否则，着色点可以被直接光源照亮。为了实现镜面的反射和折射的效果，当光源命中了一个镜面材质的物体的时候，继续反射或者折射出新的光线，如此递归下去。
 
-![image-20231205121841705](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205121841705.png?lastModify=1704433571)
+![image-20231205121841705](C++.assets/image-20231205121841705.png?lastModify=1704433571)
 
 ```
 Vector3f castRay(
@@ -3123,27 +3184,27 @@ float shade(vec3 p, vec3 wo)
 
 一系列定义在球面上的二维函数
 
-![img](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/v2-ef842c65b84bf82f773ab4b655387a3a_720w.webp?lastModify=1704433571)
+![img](C++.assets/v2-ef842c65b84bf82f773ab4b655387a3a_720w.webp?lastModify=1704433571)
 
 PRT思想：将光照切割成Lighting, Light Transport两部分。
 
-![img](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/v2-ac89de64010d5e44c6965bde98867b83_720w.webp?lastModify=1704433571)
+![img](C++.assets/v2-ac89de64010d5e44c6965bde98867b83_720w.webp?lastModify=1704433571)
 
 - 我们把rendering equation分为两部分,lighting 和 light transport.
 - 对于渲染方程，里面的光照项、可见项、BRDF项均可表面为球面谐波函数函数
 
-![img](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/v2-2951b777b686f4c78118d7e842763074_720w.webp?lastModify=1704433571)
+![img](C++.assets/v2-2951b777b686f4c78118d7e842763074_720w.webp?lastModify=1704433571)
 
 #### diffuse物体
 
 - BRDF项为常量，光照项表示为球面谐波函数并将光照项在球面谐波函数下的系数提取出来
 
-![img](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/v2-063db9e7d2ec8701b04a7cec91f4bfbb_720w.webp?lastModify=1704433571)
+![img](C++.assets/v2-063db9e7d2ec8701b04a7cec91f4bfbb_720w.webp?lastModify=1704433571)
 
 - 可见项与基函数的积分相当于对可见项进行投影
 - 可以理解成对每个光照基函数做一遍光照
 
-![img](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/v2-1499b4c16aee149846108b79d6cd63b7_720w.webp?lastModify=1704433571)
+![img](C++.assets/v2-1499b4c16aee149846108b79d6cd63b7_720w.webp?lastModify=1704433571)
 
 - 缺点：场景不能移动（光源可以旋转）
 
@@ -3151,7 +3212,7 @@ PRT思想：将光照切割成Lighting, Light Transport两部分。
 
 - 对于gloosy物体，brdf不再是常量，需要根据入射方向和出射方向的变化而变化
 
-![img](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/v2-c11f46219d43de1a0d6fcf6e87ef0994_720w.webp?lastModify=1704433571)
+![img](C++.assets/v2-c11f46219d43de1a0d6fcf6e87ef0994_720w.webp?lastModify=1704433571)
 
 - 对于gloosy物体，最后是一个向量×一个矩阵
 - 不管进行几次bounce，都是在预计算时计算出light transform即可，实际计算很快
@@ -3187,7 +3248,7 @@ PRT思想：将光照切割成Lighting, Light Transport两部分。
 
 1.考虑一次间接反射，需要先知道二级光源，即直接光照可以照亮的地方，什么信息可以告诉我们这一点呢？Shadow Map可以，存储了从光源看过去最远的点。
 
-![image-20231209202837621](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231209202837621.png?lastModify=1704433571)
+![image-20231209202837621](C++.assets/image-20231209202837621.png?lastModify=1704433571)
 
 在此，还有一个假设，被直接光照照亮的物体反射都是diffuse的，这样radiance比较好求。这里是假设reflector，没有要求receiver也是diffuse。
 
@@ -3197,7 +3258,7 @@ PRT思想：将光照切割成Lighting, Light Transport两部分。
 
 我们之前说过每一个小的patch都可能对照亮p点做出贡献,因此我们可以先计算出一个patch做出的贡献,之后用求和的形式将所有patch的贡献加在一起.
 
-![image-20231210095239257](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210095239257.png?lastModify=1704433571)
+![image-20231210095239257](C++.assets/image-20231210095239257.png?lastModify=1704433571)
 
 
 
@@ -3205,15 +3266,15 @@ PRT思想：将光照切割成Lighting, Light Transport两部分。
 
 q其实就是RSM中一个Texel所对应的patch,在games101中我们说过,原本计算q对p点的贡献,我们应该是对整个立体角进行采样,但是这样的话很浪费很多的sample,为何不直接在light处采样然后去计算p点的shading值呢.
 
-![image-20231210095536227](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210095536227.png?lastModify=1704433571)
+![image-20231210095536227](C++.assets/image-20231210095536227.png?lastModify=1704433571)
 
 也就是把立体角的积分变成了对light区域面积的积分,如果当区域足够小的时候dA甚至不用积分，直接相乘后相加就行,现在我们要解的是patch在接受直接光照后反射出的radiance是多少,也就是从q点到p点的radiance,那么如何解呢?
 
-![image-20231210095552338](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210095552338.png?lastModify=1704433571)
+![image-20231210095552338](C++.assets/image-20231210095552338.png?lastModify=1704433571)
 
 对于每个次级光源点来说,由于我们假设它的brdf是diffuse的,因此次级光源的fr积分后是个常数,此时我们把Li代入到式子中会发现dA刚好会被抵消.之后式子会少去dA,会多出来一个\phi_p，然后\phi_p和 \frac{cos\theta_q cos\theta_p}{||p-q||^2} 又组成了下列公式中的Ep与剩余部分结合求出了一个次级光源p对着色点所得到的shading结果,再将积分域中所有的结果加在一起,就是着色点最后被间接光照照亮所得到的shading值.
 
-![image-20231210100401052](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210100401052.png?lastModify=1704433571)
+![image-20231210100401052](C++.assets/image-20231210100401052.png?lastModify=1704433571)
 
 公式求的是次级光源的光线贡献在着色点上的Irradiance,Ep表示次级光源对着色点贡献的入射irradiance.
 
@@ -3223,7 +3284,7 @@ q其实就是RSM中一个Texel所对应的patch,在games101中我们说过,原�
 
 首先关于可见性，次级光源到着色点是否可见呢？需要为每个次级光源算一个shadow map，这显然不太可能！难办，那就别办了。
 
-![image-20231210101303452](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210101303452.png?lastModify=1704433571)
+![image-20231210101303452](C++.assets/image-20231210101303452.png?lastModify=1704433571)
 
 
 
@@ -3237,11 +3298,11 @@ q其实就是RSM中一个Texel所对应的patch,在games101中我们说过,原�
 
 于是我们决定先获取着色点x在shadow map中的投影位置(s,t)，在该位置附近采样间接光源，多选取一点离着色点近的VPL，并且为了弥补越往外采样数越少可能会带来的问题，引入了权重，越近了权重越小，越远的权重越大。那么对于一个shading point差不多找400个次级光源来计算是比较合适的。如下图所示。
 
-![image-20231210102101582](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210102101582.png?lastModify=1704433571)
+![image-20231210102101582](C++.assets/image-20231210102101582.png?lastModify=1704433571)
 
 现在ShadowMap上存储的东西就比较多了，深度值、世界坐标、法线、flux
 
-![image-20231210102352885](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210102352885.png?lastModify=1704433571)
+![image-20231210102352885](C++.assets/image-20231210102352885.png?lastModify=1704433571)
 
 优点：容易实现。
 
@@ -3266,7 +3327,7 @@ LPV特点：
 
 解法：将场景划分为若干个3D网络，每一个网络叫做Voxel，在计算直接光照后，将接收到直接光照的表面看作间接光照在场景中的传播点。
 
-![image-20231210154842986](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210154842986.png?lastModify=1704433571)
+![image-20231210154842986](C++.assets/image-20231210154842986.png?lastModify=1704433571)
 
 步骤：
 
@@ -3279,25 +3340,25 @@ LPV特点：
 
 - **生成**
 
-  ![image-20231210155053672](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210155053672.png?lastModify=1704433571)
+  ![image-20231210155053672](C++.assets/image-20231210155053672.png?lastModify=1704433571)
 
   - 首先通过Shadow Map找出接受直接光照的物体表面
   - 对得到的光源数量可以通过采样一些进行简化进而降低次级光源的数量，最后获得一系列的虚拟光源
 
 - **注入**
 
-  ![image-20231210155154301](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210155154301.png?lastModify=1704433571)
+  ![image-20231210155154301](C++.assets/image-20231210155154301.png?lastModify=1704433571)
 
   - 预先将场景划分为3D网格
   - 将虚拟光源注入到对应的格子中
   - 一个格子内可能含有多个不同朝向的虚拟光源，把各自内所有虚拟光源不同朝向的radiance算出来并sum求和，从而得到一个往四面八方发射的radiance
   - 由于是在空间上的分布，可以看作球面函数，用SH(球谐函数)表示（工业界一般用两阶SH就可以表示各个方向上的radiance初值）
 
-  ![image-20231210155427763](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210155427763.png?lastModify=1704433571)
+  ![image-20231210155427763](C++.assets/image-20231210155427763.png?lastModify=1704433571)
 
 - **传播**
 
-  ![image-20231210155442602](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210155442602.png?lastModify=1704433571)
+  ![image-20231210155442602](C++.assets/image-20231210155442602.png?lastModify=1704433571)
 
   - 由于是3D网络，因此可以向六个面传播(上下、前后、左右)，由于radiance是沿着直线传播，我们认为radiance是从网格中心往不同方向进行传播的，穿过哪个表面就往哪个方向传播比如穿过右表面的radiance,就传播到右边的格子里(不考虑斜角,比如右上方向,我们认为是先到右边格子,再到上面格子)
   - 每个格子计算收到的radiance,并用SH表示
@@ -3315,11 +3376,11 @@ LPV特点：
 
   由于我们认为radiance是从格子正中心向四周发散的,当遇到这种情况时,
 
-  ![image-20231210163223037](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210163223037.png?lastModify=1704433571)
+  ![image-20231210163223037](C++.assets/image-20231210163223037.png?lastModify=1704433571)
 
   按理说点P反射的radiance是无法照亮墙壁的背后,但是由于我们的假设,会导致墙壁后面也被间接光照照亮,也就是所谓的漏光现象.
 
-  ![image-20231210163305449](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210163305449.png?lastModify=1704433571)
+  ![image-20231210163305449](C++.assets/image-20231210163305449.png?lastModify=1704433571)
 
 如图,你看房屋的下部本不应该被照亮,但由于使用了LPV导致了light leaking现象.
 
@@ -3347,7 +3408,7 @@ VXGI把场景完全离散化成了一系列微小的格子，可以理解为场�
 
 而在VXGI中第二趟我们从camera出发,就像有一个Camera Ray打到每一个pixel上,根据pixel上代表的物体材质做出不同的操作,如果是glossy则打出一个锥形区域,diffuse则打出若干个锥形区域,打出的锥形区域与场景中一些已经存在的voxel相交,这些voxel对于Shading point的贡献可以算出来,也就是我们要对每一个shading point都做一个cone tracing
 
-![image-20231210165921762](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210165921762.png?lastModify=1704433571)
+![image-20231210165921762](C++.assets/image-20231210165921762.png?lastModify=1704433571)
 
 - **具体步骤**
 
@@ -3357,7 +3418,7 @@ VXGI把场景完全离散化成了一系列微小的格子，可以理解为场�
 
   但是场景现在是由voxel表示的，那么对于任何一个格子，跟LPV注入很像，这里不再记录表面的出射分布或者说认为表面是diffuse的半球分布，也就是不再像LPV一样将所有的radiance加在一起求一个各方向的初始值。
 
-  ![image-20231210165318801](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210165318801.png?lastModify=1704433571)
+  ![image-20231210165318801](C++.assets/image-20231210165318801.png?lastModify=1704433571)
 
   记录的是直接光源从哪些范围来（绿色部分），记录各个反射表面的法线（橙色部分），通过**输入方向**和**法线范围**两个信息然后通过表面的材质，来准确的算出出射的分布，这样就比LPV认为格子表面是diffuse再用SH来压缩的方法要准确，然后建立更高层级格子的这些特性。
 
@@ -3367,13 +3428,13 @@ VXGI把场景完全离散化成了一系列微小的格子，可以理解为场�
 
 **I)** 对于Glossy的表面，向反射方向追踪出一个锥形(cone)区域；
 
-![image-20231210165554629](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210165554629.png?lastModify=1704433571)
+![image-20231210165554629](C++.assets/image-20231210165554629.png?lastModify=1704433571)
 
 基于追踪出的圆锥面的大小，对格子的层级进行查询，就是对于场景中的所有体素都要判断是不是与这个锥形相交，如果相交的话就要把对于这个点的间接光照的贡献算出来(我们存储了体素的光照输入方向和法线方向,因此可以算出其输出的radiance,将cone区域内所有体素的radiance都算出来从而在shading point得到间接光照)，也就是根据传播出的距离远近找对应层级的体素，然后找覆盖的范围。
 
 **II)** 对于diffuse的情况来说,通常考虑成若干圆锥，忽略圆锥Tracing时的重叠和空隙。
 
-![image-20231210165700537](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210165700537.png?lastModify=1704433571)
+![image-20231210165700537](C++.assets/image-20231210165700537.png?lastModify=1704433571)
 
 - **总结**
 
@@ -3436,7 +3497,7 @@ MSAA运行在光栅化阶段，会计算一个覆盖率，在片段着色阶段�
 
 **还要考虑深度缓冲。**
 
-![image-20231218213732934](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231218213732934.png?lastModify=1704433571)
+![image-20231218213732934](C++.assets/image-20231218213732934.png?lastModify=1704433571)
 
 以上图为例，说明MSAA的步骤
 
@@ -3453,7 +3514,7 @@ MSAA运行在光栅化阶段，会计算一个覆盖率，在片段着色阶段�
 
 参考Games101作业的MSAA实现，在深度缓冲和原图大小一样的情况下，边界处是这样的情况，有明显的黑边，绿色三角形在上，蓝色三角形在下：
 
-![image-20231219095641009](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231219095641009.png?lastModify=1704433571)
+![image-20231219095641009](C++.assets/image-20231219095641009.png?lastModify=1704433571)
 
 绘制顺序：先绘制绿色的，再绘制蓝色的，深度缓冲记录的那就是**绿色的咯**，在边界处最终显示的颜色就是Green Color * 覆盖率(比较低)，呈现为黑色。
 
@@ -3534,11 +3595,11 @@ ShadowMap中的深度值是**非线性**的，因为深度值在投影空间下�
 
 PCF filter的半径是固定的，但是根据自然现象来看，遮挡物和阴影距离越近，阴影应该越硬
 
-![image-20231205132101004](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205132101004.png?lastModify=1704433571)
+![image-20231205132101004](C++.assets/image-20231205132101004.png?lastModify=1704433571)
 
 根据这样的现象，PCSS通过相似三角形原理，动态计算出PCF应该采样的范围大小：
 
-![image-20231205132238307](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205132238307.png?lastModify=1704433571)
+![image-20231205132238307](C++.assets/image-20231205132238307.png?lastModify=1704433571)
 
 
 
@@ -3556,13 +3617,13 @@ VSSM主要是解决了PCSS中第一步和第三步搜索慢的问题。
 
 那么一个不错的办法就是,对班级所有人的成绩做成一个直方图,根据直方图我们可判断出自己的成绩排名.
 
-![image-20231215104333185](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215104333185.png?lastModify=1704433571)
+![image-20231215104333185](C++.assets/image-20231215104333185.png?lastModify=1704433571)
 
 如果我们不需要那么准的话就可以当做一个正态分布，正态分布就只需要方差和平均值就能得出,更加的方便快速,这也就是VSSM的核心思想,通过**正态分布**来知道自己大约占百分之几.
 
 VSSM的**key idea**是快速计算出某一区域内的均值和方差.
 
-![image-20231215104422836](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215104422836.png?lastModify=1704433571)
+![image-20231215104422836](C++.assets/image-20231215104422836.png?lastModify=1704433571)
 
 所以我们要知道**均值和方差**
 
@@ -3598,7 +3659,7 @@ PDF：概率密度函数（probability density function）, 在数学中，**连
 
 CDF : 累积分布函数 (cumulative distribution function)，又叫分布函数，是**概率密度函数的积分**，能完整描述一个实随机变量X的概率分布。
 
-![image-20231215105014316](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215105014316.png?lastModify=1704433571)
+![image-20231215105014316](C++.assets/image-20231215105014316.png?lastModify=1704433571)
 
 
 
@@ -3606,7 +3667,7 @@ CDF : 累积分布函数 (cumulative distribution function)，又叫分布函数
 
 对于一个通用的高斯的PDF，对于这类PDF，可以直接把CDF结果，输出为一个表，叫误差函数Error Fuction，误差函数有数值解，但是没有解析解，在C++ 中的函数ERF(lower_limit,[upper_limit])函数可以计算CDF。
 
-![image-20231215105102231](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215105102231.png?lastModify=1704433571)
+![image-20231215105102231](C++.assets/image-20231215105102231.png?lastModify=1704433571)
 
 我们用切比雪夫不等式,来近似地求出在知道 **期望** 和 **方差** 时候,不考虑是不是正态分布,图中红色面积不会超过等式右边，这里使用了一个Trick的方法，将这个**不等式近似为相等.**
 
@@ -3630,11 +3691,11 @@ CDF : 累积分布函数 (cumulative distribution function)，又叫分布函数
 
 我们以图中的5*5范围为例,假设我们的Shading point的深度是7.
 
-![image-20231215105327163](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215105327163.png?lastModify=1704433571)
+![image-20231215105327163](C++.assets/image-20231215105327163.png?lastModify=1704433571)
 
 我们将其分为两个区域,**蓝色**是深度小于shading point的遮挡区域,其平均深度为Zocc，**红色**是深度大于shading point的非遮挡区域.其平均深度为Zunocc.并且我们认为区域内的像素总数为N,非遮挡的像素为N1个,遮挡的像素为N2个.
 
-![image-20231215105408594](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215105408594.png?lastModify=1704433571)
+![image-20231215105408594](C++.assets/image-20231215105408594.png?lastModify=1704433571)
 
 
 
@@ -3642,13 +3703,13 @@ CDF : 累积分布函数 (cumulative distribution function)，又叫分布函数
 
 我们需要去计算求出Z_{unocc} 和Z_{occ},通过他们之间的关系我们可以得出一个数学公式:
 
-![image-20231215105500830](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215105500830.png?lastModify=1704433571)
+![image-20231215105500830](C++.assets/image-20231215105500830.png?lastModify=1704433571)
 
 **非遮挡像素占的比例 \* 非遮挡物的平均深度 + 遮挡像素占的比例 \* 遮挡物的平均深度 = 总区域内的平均深度.**
 
 总区域内的平均深度我们用mipmap或者SAT去求,然后用shadow map和square-depth map方差,最后根据切比雪夫不等式近似求出 **非遮挡像素占的比例 和遮挡像素占的比例.**
 
-![image-20231215105558259](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215105558259.png?lastModify=1704433571)
+![image-20231215105558259](C++.assets/image-20231215105558259.png?lastModify=1704433571)
 
 此时公式中的 Z_{unocc} 和Z_{occ}仍然是不知道的,我们做一个大胆的假设,我们认为非遮挡物的平均深度 = shading point的深度,至此我们只剩下Z_{occ}的深度,将所有值代入可求出遮挡物的平均深度.但是接受平面是曲面或者与光源不平行的时候就会出问题。
 
@@ -3664,7 +3725,7 @@ VSSM中如何加速第一步和第三步的我们知道了,那么如何在区域
 
 有两个方法:MIPMAP 和 SAT.
 
-![image-20231215105803084](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215105803084.png?lastModify=1704433571)
+![image-20231215105803084](C++.assets/image-20231215105803084.png?lastModify=1704433571)
 
 最简单的方法自然是MIPMAP,我们在GAMES101里学过,他是一个**快速的,近似的,正方形的范围查询,**由于他要做插值,因此即便是方形有时也会不准确.同时当插值的范围不是2的次方时，也就是在两个MIPMAP之间时，还要再进行一次插值，也就是“三线性插值”，这样会让结果更加不准确,因此局限性太大且准确度也不算高.
 
@@ -3691,7 +3752,7 @@ VSSM中如何加速第一步和第三步的我们知道了,那么如何在区域
 
 
 
-![image-20231215105851063](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231215105851063.png?lastModify=1704433571)
+![image-20231215105851063](C++.assets/image-20231215105851063.png?lastModify=1704433571)
 
 问题：不是正态分布强行按正态分布算就会出现漏光和过暗的结果。在阴影的承接面不是平面的情况下也会出现阴影断掉的现象。
 
@@ -3711,11 +3772,11 @@ CSM通常用于大型场景模拟太阳的投射，对于**近处**的场景使�
 
 1.对视锥体进行划分
 
-![image-20231205213522424](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205213522424.png?lastModify=1704433571)
+![image-20231205213522424](C++.assets/image-20231205213522424.png?lastModify=1704433571)
 
 1. 每一个子视锥体都是一个场景，所以我们每一级Shadow map都要至少覆盖整个视锥体，阴影相机通常使用正交投影，正交投影的视野范围是长方体故不难想到通过 AABB 盒子来包围：
 
-![image-20231205213707322](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205213707322.png?lastModify=1704433571)
+![image-20231205213707322](C++.assets/image-20231205213707322.png?lastModify=1704433571)
 
 1. 生成深度图，有了视锥划分的box之后，我们还需要设置阴影相机以生成深度贴图，阴影相机的正交范围和包围盒保持一致。
 
@@ -3751,7 +3812,7 @@ center = matTransform(toShadowViewInv, center, 1.0f);
 
 在旋转的时候相机的包围盒长宽时刻在变化，单张阴影贴图能覆盖的面积也不断变换，自然造成了生成图像的走样：
 
-![image-20231128165425079](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231128165425079.png?lastModify=1704433571)
+![image-20231128165425079](C++.assets/image-20231128165425079.png?lastModify=1704433571)
 
 
 
@@ -3777,13 +3838,13 @@ center = matTransform(toShadowViewInv, center, 1.0f);
 
 任意一点的SDF我们是已知的,因此在P_0点时,我们以它的SDF(P_0)为半径做一个圆(此处假设在2D内,如果在3D内则是一个球),在这个圆内无论是哪个方向前进,只要不超过半径距离,都不会碰见物体,是安全的.
 
-![image-20231218222425983](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231218222425983.png?lastModify=1704433571)
+![image-20231218222425983](C++.assets/image-20231218222425983.png?lastModify=1704433571)
 
 - **生成阴影**
 
 将安全距离的概念进行延伸，在任意一点通过sdf可以获得一个safe angle.
 
-![image-20231218222500048](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231218222500048.png?lastModify=1704433571)
+![image-20231218222500048](C++.assets/image-20231218222500048.png?lastModify=1704433571)
 
 我们取点P为shading point往一方向打出一根光线,光线上的一点a,有一个SDF值SDF(a),也就是在a点以SDF(a)为半径所做的球或圆内是安全的,不会碰到物体.
 
@@ -3795,7 +3856,7 @@ center = matTransform(toShadowViewInv, center, 1.0f);
 
 因此我们需要知道的应是如何从ray marching中求出safe angle:
 
-![image-20231218222532647](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231218222532647.png?lastModify=1704433571)
+![image-20231218222532647](C++.assets/image-20231218222532647.png?lastModify=1704433571)
 
 我们以o为起点,沿一个方向推进,仍然是ray marhcing的步骤,在p1点以SDF(p1)进行推进,其余点也是一样,此处主要是为了求safe angle,我们在起点o沿每个点的sdf为半径所形成的圆做切线,从而求出各个点的safe angle,我们最后再取其中最小的角度作为总的safe angle.
 
@@ -3809,11 +3870,11 @@ center = matTransform(toShadowViewInv, center, 1.0f);
 
 arcsin的计算量其实是十分大的,因此在shader中我们不用反三角函数.
 
-![image-20231218222547880](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231218222547880.png?lastModify=1704433571)
+![image-20231218222547880](C++.assets/image-20231218222547880.png?lastModify=1704433571)
 
 只要sdf长度除以光线走过的距离乘一个k值，再限定到1以内，就能得到遮挡值或者说是visibility，而k的大小是控制阴影的软硬程度.
 
-![image-20231218222558943](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231218222558943.png?lastModify=1704433571)
+![image-20231218222558943](C++.assets/image-20231218222558943.png?lastModify=1704433571)
 
 我们从图中右半部分可以看出来,当k值越大时候,就越接近硬阴影的效果,也就是它限制了可能半影的区域:
 
@@ -3856,13 +3917,13 @@ SDF是一个快速的高质量的软阴影生成方法(比shadow map快是忽略
 
 可以利用Geometry Shader实现爆破物体的功能。
 
-![image-20231219170629393](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231219170629393.png?lastModify=1704433571)
+![image-20231219170629393](C++.assets/image-20231219170629393.png?lastModify=1704433571)
 
 
 
 爆破碎片：
 
-![image-20231219170644261](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231219170644261.png?lastModify=1704433571)
+![image-20231219170644261](C++.assets/image-20231219170644261.png?lastModify=1704433571)
 
 具体做法：
 
@@ -3944,7 +4005,19 @@ SDF是一个快速的高质量的软阴影生成方法(比shadow map快是忽略
  }
 ```
 
-![image-20231219172036695](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231219172036695.png?lastModify=1704433571)
+![image-20231219172036695](C++.assets/image-20231219172036695.png?lastModify=1704433571)
+
+
+
+## Forward+渲染
+
+分为三段：prePass `---> `lighting culling Pass `------>`  shading
+
+[Forward+ Shading - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/85615283)
+
+lighitng Culiing 有点像Cluster Based lighting这样的剔除方式
+
+最后在着色的时候根据所在的cluster完成对应光源的shading
 
 
 
@@ -3988,11 +4061,11 @@ SDF是一个快速的高质量的软阴影生成方法(比shadow map快是忽略
 
 针对第二个问题，有人提出了Visibility Buffer，在第一步渲染几何的时候，将像素信息(drawID、primitiveID等)pack到一个32bit的 UNIT中，写到Screen Space的buffer，再shading阶段读取像素的几何信息，三角形顶点的位置、uv进行重心坐标插值，计算出surface attribute属性，再完成光照计算
 
-![image-20231221105214582](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221105214582.png?lastModify=1704433571)
+![image-20231221105214582](C++.assets/image-20231221105214582.png?lastModify=1704433571)
 
 visibility buffer还可以和G-Buffer完成结合，第一遍pass仍然是visibility Pass，第二遍pass正常G-Buffer，根据visibility中的数据完成采样并写入G-Buffer，第三遍pass直接计算光照；计算光照的pass输入都是G-Buffer，无论是支持这种带有visibility buffer 的还是传统的G-Buffer，都可以完美支持、
 
-![image-20231221105222313](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221105222313.png?lastModify=1704433571)
+![image-20231221105222313](C++.assets/image-20231221105222313.png?lastModify=1704433571)
 
 
 
@@ -4004,7 +4077,7 @@ visibility buffer还可以和G-Buffer完成结合，第一遍pass仍然是visibi
 2. 叠加mipmap
 3. 上采样=>模糊去除pattern
 
-![image-20240105170714261](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240105170714261.png?lastModify=1704433571)
+![image-20240105170714261](C++.assets/image-20240105170714261.png?lastModify=1704433571)
 
 - **降采样实现**
 
@@ -4044,6 +4117,82 @@ float4 frag (v2f i) : SV_Target
 
 
 
+* **体积光**
+
+延迟渲染一直被称赞的原因就是它能够渲染大量的光源而不消耗大量的性能。然而，延迟渲染它本身并不能支持非常大量的光源，因为我们仍然必须要对场景中每一个光源计算每一个片段的光照分量。真正让大量光源成为可能的是我们能够对延迟渲染管线引用的一个非常棒的优化：**光体积(Light Volumes)**
+
+通常情况下，当我们渲染一个复杂光照场景下的片段着色器时，我们会计算场景中**每一个**光源的贡献，不管它们离这个片段有多远。很大一部分的光源根本就不会到达这个片段，所以为什么我们还要浪费这么多光照运算呢？
+
+隐藏在光体积背后的想法就是计算光源的半径，或是体积，也就是光能够到达片段的范围。由于大部分光源都使用了某种形式的衰减(Attenuation)，我们可以用它来计算光源能够到达的最大路程，或者说是半径。我们接下来只需要对那些在一个或多个光体积内的片段进行繁重的光照运算就行了。这可以给我们省下来很可观的计算量，因为我们现在只在需要的情况下计算光照。
+
+这个方法的难点基本就是找出一个光源光体积的大小，或者是半径。
+
+### 计算一个光源的体积或半径
+
+为了获取一个光源的体积半径，我们需要解一个对于一个我们认为是**黑暗(Dark)**的亮度(Brightness)的衰减方程，它可以是0.0，或者是更亮一点的但仍被认为黑暗的值，像是0.03。为了展示我们如何计算光源的体积半径，我们将会使用一个在[投光物](http://learnopengl-cn.readthedocs.org/zh/latest/02 Lighting/05 Light casters/)这节中引入的一个更加复杂，但非常灵活的衰减方程：
+
+![image-20240108114307664](C++.assets/image-20240108114307664.png)
+
+我们现在想要在$F_{light}$等于0的前提下解这个方程，也就是说光在该距离完全是黑暗的。然而这个方程永远不会真正等于0.0，所以它没有解。所以，我们不会求表达式等于0.0时候的解，相反我们会求当亮度值靠近于0.0的解，这时候它还是能被看做是黑暗的。在这个教程的演示场景中，我们选择5/2565作为一个合适的光照值；除以256是因为默认的8-bit帧缓冲可以每个分量显示这么多强度值(Intensity)。
+
+我们使用的衰减方程在它的可视范围内基本都是黑暗的，所以如果我们想要限制它为一个比5/256更加黑暗的亮度，光体积就会变得太大从而变得低效。只要是用户不能在光体积边缘看到一个突兀的截断，这个参数就没事了。当然它还是依赖于场景的类型，一个高的亮度阀值会产生更小的光体积，从而获得更高的效率，然而它同样会产生一个很容易发现的副作用，那就是光会在光体积边界看起来突然断掉。
+
+我们要求的衰减方程会是这样：
+
+![image-20240108114140060](C++.assets/image-20240108114140060.png)
+
+在这里，Imax是光源最亮的颜色分量。我们之所以使用光源最亮的颜色分量是因为解光源最亮的强度值方程最好地反映了理想光体积半径。
+
+从这里我们继续解方程：
+
+![image-20240108114155678](C++.assets/image-20240108114155678.png)
+
+
+
+最后的方程形成了![image-20240108114126802](C++.assets/image-20240108114126802.png)的形式，我们可以用求根公式来解这个二次方程：
+
+![image-20240108114108093](C++.assets/image-20240108114108093.png)
+
+它给我们了一个通用公式从而允许我们计算x的值，即光源的光体积半径，只要我们提供了一个常量，线性和二次项参数：
+
+```c++
+GLfloat constant  = 1.0; 
+GLfloat linear    = 0.7;
+GLfloat quadratic = 1.8;
+GLfloat lightMax  = std::fmaxf(std::fmaxf(lightColor.r, lightColor.g), lightColor.b);
+GLfloat radius    = 
+  (-linear +  std::sqrtf(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * lightMax))) 
+  / (2 * quadratic);  
+```
+
+它会返回一个大概在1.0到5.0范围内的半径值，它取决于光的最大强度。
+
+对于场景中每一个光源，我们都计算它的半径，并仅在片段在光源的体积内部时才计算该光源的光照。下面是更新过的光照处理阶段片段着色器，它考虑到了计算出来的光体积。注意这种方法仅仅用作教学目的，在实际场景中是不可行的，我们会在后面讨论它：
+
+```c++
+struct Light {
+    [...]
+    float Radius;
+}; 
+
+void main()
+{
+    [...]
+    for(int i = 0; i < NR_LIGHTS; ++i)
+    {
+        // 计算光源和该片段间距离
+        float distance = length(lights[i].Position - FragPos);
+        if(distance < lights[i].Radius)
+        {
+            // 执行大开销光照
+            [...]
+        }
+    }   
+}
+```
+
+
+
 
 
 ## GPU Driven
@@ -4054,19 +4203,19 @@ nanite在同一个instance中不同cluster中可以拥有不同的LOD层级，�
 
 nanite管线对几何模型分成多个cluster，并且将一定数量的cluster合成一个cluster group，在切换LOD层级的时候，保持柱cluster group边界不发生变化，保证和其他cluster group仍然水密连接，并将切换后的cluster group中的三角形继续划分成cluster。
 
-![image-20231221105443423](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221105443423.png?lastModify=1704433571)
+![image-20231221105443423](C++.assets/image-20231221105443423.png?lastModify=1704433571)
 
-![image-20231221105524204](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221105524204.png?lastModify=1704433571)
+![image-20231221105524204](C++.assets/image-20231221105524204.png?lastModify=1704433571)
 
 表示的是cluster group之间的边界，红色的是LOD0，绿色的是LOD1，蓝色的是LOD2，切换LOD层级的时候，边界也会重新被划分
 
-![image-20231221105545079](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221105545079.png?lastModify=1704433571)
+![image-20231221105545079](C++.assets/image-20231221105545079.png?lastModify=1704433571)
 
 LOD Selection 通过并行计算实现，需要绘制的条件为：parentError> threshold && ClusterError <= threshold 将上述图拍平，在每一个cluster group中存放一个parent error
 
 每一个cluster group中的cluster独立判断，每个只会判断自己的绘制情况
 
-![image-20231221105628171](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221105628171.png?lastModify=1704433571)
+![image-20231221105628171](C++.assets/image-20231221105628171.png?lastModify=1704433571)
 
 
 
@@ -4137,23 +4286,23 @@ LOD Selection 通过并行计算实现，需要绘制的条件为：parentError>
 
 把物体放在一个三个轴向对其的包围盒内(一个矩形)，如果光线无法与包围盒相交，那必然也无法和包围盒里面的物体相交，这样就可以省略大量不必要的求交计算；而且光线与包围盒的求交计算与具体的物体求交相比，速度是快得很多的；使用AABB的好处，计算可以简化，很容易计算出t，只需要用轴分量计算。
 
-![image-20231212213323559](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212213323559.png?lastModify=1704433571)
+![image-20231212213323559](C++.assets/image-20231212213323559.png?lastModify=1704433571)
 
 ### 均匀格子法（uniform grids）
 
 在AABB里面划分小格子，然后预处理将物体包含的格子做标记；接着遍历光线上的格子，在计算光线与标记过的格子中的物体是否相交。这样可以省略对那些不包含格子的物体进行求交计算，进一步提高求交速度：
 
-![image-20231212213518207](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212213518207.png?lastModify=1704433571)
+![image-20231212213518207](C++.assets/image-20231212213518207.png?lastModify=1704433571)
 
 ### 层次包围盒(BVH)
 
 基于对象进行划分，目前得到最广泛的应用：
 
-![image-20231219112132384](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231219112132384.png?lastModify=1704433571)
+![image-20231219112132384](C++.assets/image-20231219112132384.png?lastModify=1704433571)
 
 使用BVH可以避免一个对象同时存在不同的包围盒/区域中，以下是根据空间划分和根据对象进行划分的算法区别：
 
-![image-20231212213915921](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212213915921.png?lastModify=1704433571)
+![image-20231212213915921](C++.assets/image-20231212213915921.png?lastModify=1704433571)
 
 
 
@@ -4250,7 +4399,7 @@ AABB：  AABB是应用最早的包围盒。它被定义为包含该对象，且�
 
 - **给你一大堆顶点，球形包围盒怎么计算**
 
-![image-20231214203915345](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214203915345.png?lastModify=1704433571)
+![image-20231214203915345](C++.assets/image-20231214203915345.png?lastModify=1704433571)
 
 
 
@@ -4260,13 +4409,13 @@ AABB：  AABB是应用最早的包围盒。它被定义为包含该对象，且�
 
 - **向量叉乘**
 
-![image-20240102153446354](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240102153446354.png?lastModify=1704433571)
+![image-20240102153446354](C++.assets/image-20240102153446354.png?lastModify=1704433571)
 
-![image-20240102153453680](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240102153453680.png?lastModify=1704433571)
+![image-20240102153453680](C++.assets/image-20240102153453680.png?lastModify=1704433571)
 
 - **向量点乘**
 
-![image-20240102153553116](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240102153553116.png?lastModify=1704433571)
+![image-20240102153553116](/C++.assets/image-20240102153553116.png?lastModify=1704433571)
 
 
 
@@ -4278,16 +4427,16 @@ AABB：  AABB是应用最早的包围盒。它被定义为包含该对象，且�
 
 这是一种以高效的离散方式对连续的积分求近似的非常直观的方法：对于任何面积/体积进行积分，例如半球 Ω ——在该面积/体积内生成数量 N 的随机采样，权衡每个样本对最终结果的贡献并求和。
 
-![image-20231205215526007](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205215526007.png?lastModify=1704433571)
+![image-20231205215526007](C++.assets/image-20231205215526007.png?lastModify=1704433571)
 
 - **重要性采样**
   - 原理：重要性采样即通过现有的一些已知条件(分布函数)，想办法集中于被积函数分布可能性较高的区域(重要的区域)进行采样，进而可高效计算估算结果的一种策略。
   - 理解：因为概率密度函数可能不是均匀分布的，有些地方概率高，因此应该尽可能的多采用概率密度高的区域。
   - 举例：在使用路径追踪的时候，我们会随机生成一条反射光线，如果这个光线是均匀分布的话，很有可能可能许多发射出的光线最后都没有与光源相交，这样就造成了很多计算的浪费。重要性采样是说，着重去采样那些更有可能打到光源上的光线，比如更多地采样光源方向的光线：
 
-![image-20231205215919070](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205215919070.png?lastModify=1704433571)
+![image-20231205215919070](C++.assets/image-20231205215919070.png?lastModify=1704433571)
 
-![image-20231205215935698](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231205215935698.png?lastModify=1704433571)
+![image-20231205215935698](C++.assets/image-20231205215935698.png?lastModify=1704433571)
 
 ### 三维数学
 
@@ -4344,7 +4493,7 @@ GLM_FUNC_QUALIFIER mat<4, 4, T, Q> lookAtRH(vec<3, T, Q> const& eye, vec<3, T, Q
 
   当模型发生了non-uniform缩放的时候，经过上述矩阵变换，法线就不再和模型表面垂直了，失去了法线的意义，例如下图：
 
-  ![image-20231210215142420](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210215142420.png?lastModify=1704433571)
+  ![image-20231210215142420](/C++.assets/image-20231210215142420.png?lastModify=1704433571)
 
   那么用于法线变换的矩阵应该长什么样呢?答案是：
 
@@ -4354,11 +4503,11 @@ GLM_FUNC_QUALIFIER mat<4, 4, T, Q> lookAtRH(vec<3, T, Q> const& eye, vec<3, T, Q
 
   - **推导**
 
-  ![image-20231210215257943](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210215257943.png?lastModify=1704433571)
+  ![image-20231210215257943](C++.assets/image-20231210215257943.png?lastModify=1704433571)
 
   
 
-![image-20231210215325026](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210215325026.png?lastModify=1704433571)
+![image-20231210215325026](/C++.assets/image-20231210215325026.png?lastModify=1704433571)
 
 
 
@@ -4378,7 +4527,7 @@ GLM_FUNC_QUALIFIER mat<4, 4, T, Q> lookAtRH(vec<3, T, Q> const& eye, vec<3, T, Q
 
 - **点到平面的距离公式**
 
-![image-20231214191722654](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214191722654.png?lastModify=1704433571)
+![image-20231214191722654](/C++.assets/image-20231214191722654.png?lastModify=1704433571)
 
 - **如何判断一个点在三角形(矩形、扇形、凸多边形)内**
 
@@ -4408,11 +4557,11 @@ GLM_FUNC_QUALIFIER mat<4, 4, T, Q> lookAtRH(vec<3, T, Q> const& eye, vec<3, T, Q
 
 光栅化的时候通常会遇到一个术语，那就是左上填充规则（ top-left rule ），它的作用是为了避免相邻的多边形重复绘制邻边。如图 1 所示，如果没有左上填充规则，绘制三角形 ABD 和 BCD 的时候，有可能同时绘制 BD 边，导致 BD 被绘制 2 次。乍一看，除了稍微影响点效率外，重复绘制好像也没什么坏处，不过在处理透明度和模板（ stenciling ）的时候，重复渲染三角形的邻边会让结果出现严重的瑕疵。
 
-![image-20231214214935827](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214214935827.png?lastModify=1704433571)
+![image-20231214214935827](/C++.assets/image-20231214214935827.png?lastModify=1704433571)
 
 原因：如果简单的认为像素都应着色或都不着色，会致使重复填充或出现漏点。
 
-![image-20231214213637139](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231214213637139.png?lastModify=1704433571)
+![image-20231214213637139](C++.assets/image-20231214213637139.png?lastModify=1704433571)
 
 Top-Left Fill Rule就是说当一个像素刚好压在三角形边上的时候，只有这条边在三角形的左边，或者上面的时候，才判定这个像素被三角形覆盖(如上图)。
 
@@ -4439,7 +4588,7 @@ for(int y = ymin; y<ymax; y++)
 
 公垂线一定垂直于两条直线，则\vec{v_1} × \vec{v_2}，就能得到公垂线的方向，则在每条直线上任意找一点，然后与公垂线方向点乘就可以得到该线段再公垂线方向的投影。
 
-![image-20231217094731754](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231217094731754.png?lastModify=1704433571)
+![image-20231217094731754](C++.assets/image-20231217094731754.png?lastModify=1704433571)
 
 
 
@@ -4507,7 +4656,7 @@ for(int y = ymin; y<ymax; y++)
 
 光栅化就是把东西画在屏幕上的一个过程，光栅化渲染管线主要分为应用阶段、几何处理阶段、光栅化阶段和像素处理阶段。
 
-![image-20231206210905619](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206210905619.png?lastModify=1704433571)
+![image-20231206210905619](C++.assets/image-20231206210905619.png?lastModify=1704433571)
 
 需要CPU和GPU配合去完成，首先在应用阶段，会完成加载场景、设置渲染状态、设置纹理等等，最后下达一个draw call的指令上交到命令缓冲队列中，GPU会取出命令依次进行处理，来到GPU阶段，首先会进行几何处理，在顶点着色器中，完成MVP的运算等等，还可能会有曲面细分着色器、几何着色器等等生成更加精密的模型信息，然后完成裁剪、投影、屏幕映射等，于是到了光栅化阶段，光栅化会完成插值，确定那些像素要被绘制，然后到了像素着色器进行光照运算等等，最后通过一些测试深度测试、模板测试、混合等操作，我们就得到了屏幕上的一张渲染图片结果。
 
@@ -4521,7 +4670,7 @@ for(int y = ymin; y<ymax; y++)
 
 两者都是通用的渲染技术
 
-![image-20231206212718481](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206212718481.png?lastModify=1704433571)
+![image-20231206212718481](C++.assets/image-20231206212718481.png?lastModify=1704433571)
 
 - **如何降低DrawCall**
 
@@ -4598,7 +4747,7 @@ GPU Instacing合批是非常好的一种方式，它的缺点就是有些老的�
 
   PBR是基于物理的渲染，主要基于微平面理论和一些物理原理，可以更加准确的表达物体和光的交互方式，模型一般采用cook-torrance模型。
 
-  ![image-20231206214708893](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206214708893.png?lastModify=1704433571)
+  ![image-20231206214708893](C++.assets/image-20231206214708893.png?lastModify=1704433571)
 
   
 
@@ -4606,23 +4755,23 @@ GPU Instacing合批是非常好的一种方式，它的缺点就是有些老的�
 
   - 漫反射项
 
-  ![image-20231206215033526](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206215033526.png?lastModify=1704433571)
+  ![image-20231206215033526](C++.assets/image-20231206215033526.png?lastModify=1704433571)
 
   
 
   由于假设入射光是均匀且遍布整个半球方向，因此Li与Lo相等，则：
 
-  ![image-20231206215117269](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206215117269.png?lastModify=1704433571)
+  ![image-20231206215117269](C++.assets/image-20231206215117269.png?lastModify=1704433571)
 
   考虑到能量吸收，反射率，得到最终的漫反射BRDF：
 
-  ![image-20231206215140187](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206215140187.png?lastModify=1704433571)
+  ![image-20231206215140187](C++.assets/image-20231206215140187.png?lastModify=1704433571)
 
   - **镜面反射项**
 
   
 
-  ![image-20231206215152896](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206215152896.png?lastModify=1704433571)
+  ![image-20231206215152896](C++.assets/image-20231206215152896.png?lastModify=1704433571)
 
   D：法线分布函数：描述的是各个为表面法线的集中程度，一般用GGX。
 
@@ -4652,7 +4801,7 @@ GPU Instacing合批是非常好的一种方式，它的缺点就是有些老的�
 
   反射方程：
 
-  ![image-20231206214359394](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231206214359394.png?lastModify=1704433571)
+  ![image-20231206214359394](C++.assets/image-20231206214359394.png?lastModify=1704433571)
 
   
 
@@ -4713,7 +4862,7 @@ OpenGL：
 
 降采样(mipmap)是为了迅速模糊，达到泛光的“泛”的效果，但是还不够亮，要使得它足够的亮，可以将mipmap相加，mipmap等级低的负责中心高亮，mipmap等级高的负责周边的泛，直接相加的话会导致pattern出现，因此可以上采样，边模糊边上采样。
 
-![image-20231207112210011](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231207112210011.png?lastModify=1704433571)
+![image-20231207112210011](C++.assets/image-20231207112210011.png?lastModify=1704433571)
 
 - Chromatic Abberation(色差)
 
@@ -4763,7 +4912,7 @@ FragColour = vec4(colour + grain.xyz, 1.0);
 
 把当前视点下的深度缓存当成场景的一个粗略的近似来计算AO , 因为它们都是基于场景在屏幕空间的一个特定表达 , 而 AO 计算也是在屏幕空间中进行的 。
 
-![image-20231207114916762](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231207114916762.png?lastModify=1704433571)
+![image-20231207114916762](C++.assets/image-20231207114916762.png?lastModify=1704433571)
 
 1. 在以 p 点为中心、 R 为半径的球体空间内( 若有法向缓存则为半球体空间内 ) 随机地产生若干三维采样点
 2. 估算每个采样点产生的 AO : 计算每个采样点在深度缓存上的投影点 , 用投影点产生的遮蔽近似代替采样点的遮蔽。
@@ -4777,7 +4926,7 @@ FragColour = vec4(colour + grain.xyz, 1.0);
   - 我们不去假设间接光照是固定不变的
   - RSM中我们用shadow map去找到接收直接光照的点当作间接光照为其他的Shading point提供直接光照,也就是说**我们一定程度上是可以已经得到间接光照的信息。**
 
-  ![image-20231210175232178](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210175232178.png?lastModify=1704433571)
+  ![image-20231210175232178](C++.assets/image-20231210175232178.png?lastModify=1704433571)
 
   通过AO和DO的对比我们可以看到,AO能够产生变暗的效果使得物体相对感更强烈,但AO并不能做到Clolor Blending（不同颜色的Diffuse会互相照亮）
 
@@ -4785,14 +4934,14 @@ FragColour = vec4(colour + grain.xyz, 1.0);
 
 - **做法**
 
-![image-20231210175432168](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210175432168.png?lastModify=1704433571)
+![image-20231210175432168](C++.assets/image-20231210175432168.png?lastModify=1704433571)
 
 SSDO的做法于path tracing很像,假设在Shading Point的P点，随机的往某一个方向打出一根光线:
 
 1. 如果光线没碰到物体，则认为P点这里接收直接光照
 2. 如果碰到了一个点Q,那么算出Q点接受的直接光照打到P点的贡献,从而求出P点的间接光照。
 
-![image-20231210175526106](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210175526106.png?lastModify=1704433571)
+![image-20231210175526106](C++.assets/image-20231210175526106.png?lastModify=1704433571)
 
 我们可以发现,SSAO和SSDO是完全相反的两个假设:
 
@@ -4818,11 +4967,11 @@ SSDO的核心是要找哪些patch会被挡住，也就是对点P提供间接光�
 
 这里A/B/D这三个点的深度比从camera看去的最小深度深,也就是说PA,PB,PD方向会被物体挡住,因此会为P点提供间接光照。然后把我们用在RSM中讲的计算间接光照的方法这些点对P的贡献加起来。
 
-![image-20231210175907846](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210175907846.png?lastModify=1704433571)
+![image-20231210175907846](C++.assets/image-20231210175907846.png?lastModify=1704433571)
 
 SSDO也会出现一些问题,如下图是假设与实际情况不同的情况，因为我们是在屏幕空间处理的,因此在A点虽然会被canmera看不到，但是AP之间是不会挡住的,实际上A点需要提供间接光照给P点,但在SSDO算法中则不提供。
 
-![image-20231210175942584](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210175942584.png?lastModify=1704433571)
+![image-20231210175942584](C++.assets/image-20231210175942584.png?lastModify=1704433571)
 
 从计算量上来看与SSAO差不多，但是不同之处是，判定会被挡住的时候，会额外计算被挡住的小片的贡献，质量非常接近离线渲染。
 
@@ -4830,7 +4979,7 @@ SSDO也会出现一些问题,如下图是假设与实际情况不同的情况，
 
 P点对于半球上的点可见性是通过Camera对这些点的可见性来近似计算的，存在于屏幕空间中丢失信息的问题，下图是一个很明显的例子，当黄色的面朝向屏幕的时候地面的SSDO信息是正确的，而当旋转过去之后，就看不到SSDO的信息了。
 
-![image-20231210180059357](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231210180059357.png?lastModify=1704433571)
+![image-20231210180059357](C++.assets/image-20231210180059357.png?lastModify=1704433571)
 
 SSDO只能解决一个很小范围内的全局光照，下图是接近正确的情况，而如果使用SSDO来计算，方块右边是追踪不到远处绿色的墙的，方块上也就不会有绿色的反光。
 
@@ -4948,7 +5097,7 @@ void Material::BindMaterialInformation(Shader *shader) const{
 
   - 预滤波环境卷积
 
-  ![image-20231126170402413](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231126170402413.png?lastModify=1704433571)
+  ![image-20231126170402413](C++.assets/image-20231126170402413.png?lastModify=1704433571)
 
   这次卷积引入了粗糙度，由于跟视角关系有关，又做出了大胆的假设
 
@@ -4962,7 +5111,7 @@ void Material::BindMaterialInformation(Shader *shader) const{
 
   - BRDF
 
-​			![image-20231126170733874](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231126170733874.png?lastModify=1704433571)
+​			![image-20231126170733874](C++.assets/image-20231126170733874.png?lastModify=1704433571)
 
 将公式转化为F0 * A + B，A、B即为预先计算的BRDF贴图采样的结果，其输入是 n 和 ωo 的夹角，以及粗糙度，并将卷积的结果存储在纹理中。我们将卷积后的结果存储在 2D 查找纹理（Look Up Texture, LUT）中。最终完成应用。
 
@@ -5012,7 +5161,7 @@ void Material::BindMaterialInformation(Shader *shader) const{
 
 #### Bloom(泛光)
 
-![image-20231126154252607](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231126154252607.png?lastModify=1704433571)
+![image-20231126154252607](/C++.assets/image-20231126154252607.png?lastModify=1704433571)
 
 是在hdr-》sdr之前进行的，里面的值仍可能>1
 
@@ -5022,7 +5171,7 @@ void Material::BindMaterialInformation(Shader *shader) const{
 
 #### ChromaticAberration（色差处理）
 
-![image-20231126154319279](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231126154319279.png?lastModify=1704433571)
+![image-20231126154319279](/C++.assets/image-20231126154319279.png?lastModify=1704433571)
 
 是在sdr之后处理的，采用了一个快速实现，计算每个点的uv和中心点的uv(0.5, 0.5)的差值以确定偏移值，采样的时候分别通过偏移值采样不同点的r、g、b来实现色差效果
 
@@ -5038,7 +5187,7 @@ float b = texture2D(input_texture, TexCoords - (3 * offset)).b;
 
 #### Vignette (晕影效果)
 
-![image-20231126154619961](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231126154619961.png?lastModify=1704433571)
+![image-20231126154619961](/C++.assets/image-20231126154619961.png?lastModify=1704433571)
 
 设定一默认颜色黑色，根据uv和中心点之间的距离，给不同的mix权重，在中心点mix就比较大，采样结果输入图像对应结果，对于比较远的边缘的点，mix结果比较小，黑色占比比较大，实现了这种晕影效果
 
@@ -5061,7 +5210,7 @@ FragColour = vec4(mix(color, sceneColour, vig), 1.0);
 
 #### Film Grain(电影颗粒效果)
 
-![image-20231126160306266](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231126160306266.png?lastModify=1704433571)
+![image-20231126160306266](C++.assets/image-20231126160306266.png?lastModify=1704433571)
 
 根据时间和uv生成一些随机颗粒，叠加到颜色中去，时间一直在更新，因此看起来有颗粒波动的效果。
 
@@ -5080,7 +5229,7 @@ FragColour = vec4(colour + grain.xyz, 1.0);
 
 取一段区域为聚焦区域，中间区域在场景图中采样，两边区域在模糊图中采样，中间过渡区进行插值。
 
-![image-20231218200354046](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231218200354046.png?lastModify=1704433571)
+![image-20231218200354046](C++.assets/image-20231218200354046.png?lastModify=1704433571)
 
 #### 运动模糊(Motion Blur)
 
@@ -5130,19 +5279,19 @@ FragColour = vec4(colour + grain.xyz, 1.0);
 
    问题：会出现T-Junction的情况，在相邻三角形的曲线细分层次等级不一样，可能会有缝隙，因此要保证LOD等级一致。
 
-   ![image-20231221101053745](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221101053745.png?lastModify=1704433571)
+   ![image-20231221101053745](C++.assets/image-20231221101053745.png?lastModify=1704433571)
 
 3. **四叉树形式**
 
 切分三角形的方式不符合我们制作地形的直觉，因此上述算法在实际应用中使用不多。基于四叉树的细分方式则更加方便理解和使用。
 
-![image-20231221102727238](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221102727238.png?lastModify=1704433571)
+![image-20231221102727238](C++.assets/image-20231221102727238.png?lastModify=1704433571)
 
-![image-20231221102744292](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221102744292.png?lastModify=1704433571)
+![image-20231221102744292](C++.assets/image-20231221102744292.png?lastModify=1704433571)
 
 QuadTree不仅在算法层面较为便利，并且资源的制作和管理方式也与算法较为贴合。四叉树同样存在T-Junctions问题，但在处理时十分聪明：存在T-Junctions的问题三角形，将其新增的细分点吸附到临近三角形点。这种处理方式不存在顶点的删减，算法实现层面也较为简单。
 
-![image-20231221102756100](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231221102756100.png?lastModify=1704433571)
+![image-20231221102756100](C++.assets/image-20231221102756100.png?lastModify=1704433571)
 
 1. **nanite渲染管线**
 
@@ -5164,7 +5313,7 @@ QuadTree不仅在算法层面较为便利，并且资源的制作和管理方式
 
 - **反射效果实现**
 
-![image-20231129194313376](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231129194313376.png?lastModify=1704433571)
+![image-20231129194313376](C++.assets/image-20231129194313376.png?lastModify=1704433571)
 
 反射纹理：反射相机与主相机在y轴的相反位置，同时反射相机向X轴方向倾斜，倾斜角度为主相机相反的倾斜角度。我们从反射相机的角度进行渲染，只渲染水面以上的物体（天空盒），最终渲染结果颜色对应Y坐标需要反转(1.0-tex.y)，不渲染水面底部及顶部纹理。
 
@@ -5269,7 +5418,7 @@ FragColour.a = dampeningEffect;
 
 准备了四个Buffer，分别存放Cluster信息表(世界坐标八个点的坐标)，光源信息表，光源分配结果表以及光源分配索引表，所有Buffer都是一维的，使用的时候根据compute shader thread id三维坐标转换为一维坐标再读取数据
 
-![image-20231128154553347](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231128154553347.png?lastModify=1704433571)
+![image-20231128154553347](C++.assets/image-20231128154553347.png?lastModify=1704433571)
 
 光源分配索引表（assignTable）中每个元素对应一个 Cluster，每个元素存储了 start 和 count，表示该 Cluster 受到哪些光源的影响。
 
@@ -5277,13 +5426,13 @@ FragColour.a = dampeningEffect;
 
 具体的索引过程如下。首先通过 Cluster ID 查 assignTable，然后遍历 lightAssignBuffer 获取灯光 ID，再根据灯光 ID 查 lightBuffer 获取灯光信息：
 
-![image-20231128154709274](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231128154709274.png?lastModify=1704433571)
+![image-20231128154709274](C++.assets/image-20231128154709274.png?lastModify=1704433571)
 
 - 分簇
 
   每一个簇都可以用粗暴的8个点表示
 
-![image-20231128155149549](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231128155149549.png?lastModify=1704433571)
+![image-20231128155149549](C++.assets/image-20231128155149549.png?lastModify=1704433571)
 
 
 
@@ -5296,11 +5445,11 @@ FragColour.a = dampeningEffect;
 
 步骤比较简单，但我的语言表达能力捉急，于是大概流程图如下：
 
-![image-20231128155235852](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231128155235852.png?lastModify=1704433571)
+![image-20231128155235852](C++.assets/image-20231128155235852.png?lastModify=1704433571)
 
 分簇结果绘制出来大概是这样：
 
-![image-20231128155306108](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231128155306108.png?lastModify=1704433571)
+![image-20231128155306108](C++.assets/image-20231128155306108.png?lastModify=1704433571)
 
 - 传递光源信息
 
@@ -5397,7 +5546,7 @@ void LightAssign(
 
 根据像素位置求出所在的clusterID，根据光照结果计算表求出在该Cluster下，光照的贡献结果，点源衰减计算套取了一个衰减公式：
 
-![image-20231128161047635](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231128161047635.png?lastModify=1704433571)
+![image-20231128161047635](C++.assets/image-20231128161047635.png?lastModify=1704433571)
 
 ```
 //计算Cluster Based Lighting
@@ -5458,7 +5607,7 @@ demo完成对同一个物体的剔除，该物体数量很多
 
 4. 具体判断过程：
 
-   ![image-20231114192014447](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231114192014447.png?lastModify=1704433571)
+   ![image-20231114192014447](C++.assets/image-20231114192014447.png?lastModify=1704433571)
 
 
 
@@ -5503,7 +5652,7 @@ mipmap存储可见的距离摄像机最远的位置的深度值，然后进行Hi
 
   对于新手，通过在引擎编辑器中进行简单的GUI操作，即可实现游戏功能（设计关卡、动画等），这一层被称为**工具层**，也是接触引擎时最直观、最直接交互的层级。
 
-  ![image-20231222152356650](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231222152356650.png?lastModify=1704433571)
+  ![image-20231222152356650](C++.assets/image-20231222152356650.png?lastModify=1704433571)
 
   
 
@@ -5511,25 +5660,25 @@ mipmap存储可见的距离摄像机最远的位置的深度值，然后进行Hi
 
   为了使游戏呈现在屏幕上，需要渲染系统对虚拟世界进行渲染。动画系统将艺术家设计的动作动画在引擎中进行组合、过渡，让游戏人物在游戏动起来。逼真的虚拟世界也离不开物理，物理系统将使用刚体、软体、流体等去表达世界，使得人与人、人与物不会发生碰撞。游戏中的玩法以及NPC人物，也都离不开脚本、事件、AI系统等。为了实现游戏中的人机交互，还需要与输入、输出设备连接。
 
-  ![image-20231222152426080](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231222152426080.png?lastModify=1704433571)
+  ![image-20231222152426080](C++.assets/image-20231222152426080.png?lastModify=1704433571)
 
   - 资源层
 
   游戏引擎中通常包含大量数据和文件，这些文件通常以不同的形式存在，例如Photoshop中的专用格式psd文件或者3ds Max中的max文件，上万、上十万的数据文件由**资源层**进行加载与管理。
 
-  ![image-20231222152439803](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231222152439803.png?lastModify=1704433571)
+  ![image-20231222152439803](C++.assets/image-20231222152439803.png?lastModify=1704433571)
 
   - 核心层
 
   工具层、功能层、资源层会频繁调用底层代码，使用容器创建、内存分配、数学库、多线程等底层功能，而**核心层**能够提供上述功能。
 
-  ![image-20231222152454975](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231222152454975.png?lastModify=1704433571)
+  ![image-20231222152454975](C++.assets/image-20231222152454975.png?lastModify=1704433571)
 
   - 平台层
 
   在游戏引擎中最容易被忽略的是平台层，引擎或者游戏需要发布在不同平台上，可能需要使用不同的图形API。此外，用户使用的输入设备、硬件设备可能也完全不同，这都需要平台层进行处理。
 
-  ![image-20231222152630459](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231222152630459.png?lastModify=1704433571)
+  ![image-20231222152630459](C++.assets/image-20231222152630459.png?lastModify=1704433571)
 
 
 
@@ -5588,7 +5737,7 @@ ECS（Entity-Component-System）是一种游戏引擎中常用的模式设计，
 
   它们的依赖关系或数据的走向常规有以下3种，而第三种也是使用最频繁的一种（其实项目中多数是使用第三种的变种）
 
-  ![image-20231222154244211](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231222154244211.png?lastModify=1704433571)
+  ![image-20231222154244211](C++.assets/image-20231222154244211.png?lastModify=1704433571)
 
   
 
@@ -5600,7 +5749,7 @@ ECS（Entity-Component-System）是一种游戏引擎中常用的模式设计，
 
 **ViewModel** 在原有Controller层的基础上，将业务逻辑封和组件进行双向绑定（data-binding），达到同步更新的目的。
 
-![image-20231222154545228](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231222154545228.png?lastModify=1704433571)
+![image-20231222154545228](C++.assets/image-20231222154545228.png?lastModify=1704433571)
 
 
 
@@ -5668,11 +5817,11 @@ ECS（Entity-Component-System）是一种游戏引擎中常用的模式设计，
 
 - **两个链表的第一个公共节点**
 
-![image-20240103225840758](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240103225840758.png?lastModify=1704433571)
+![image-20240103225840758](C++.assets/image-20240103225840758.png?lastModify=1704433571)
 
 显然第一个公共结点为`8`，但是链表`A`头结点到`8`的长度为`2`，链表`B`头结点到`8`的长度为`3`，显然不好办？ 如果我们能够制造一种理想情况，如下：
 
-![image-20240103225852598](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240103225852598.png?lastModify=1704433571)
+![image-20240103225852598](C++.assets/image-20240103225852598.png?lastModify=1704433571)
 
 这里先假设链表`A`头结点与结点`8`的长度 与 链表`B`头结点与结点`8`的长度相等，那么就可以用双指针。
 
@@ -5682,7 +5831,7 @@ ECS（Entity-Component-System）是一种游戏引擎中常用的模式设计，
 
 所以现在的问题就变成，如何让本来长度不相等的变为相等的？ 假设链表`A`长度为`a`， 链表`B`的长度为`b`，此时`a != b` 但是，`a+b == b+a` 因此，可以让a+b作为链表A的新长度，b+a作为链表B的新长度。 如图：
 
-![image-20240103225907234](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240103225907234.png?lastModify=1704433571)
+![image-20240103225907234](C++.assets/image-20240103225907234.png?lastModify=1704433571)
 
 这样，长度就一致了，可以用上述的双指针解法了。
 
@@ -6380,7 +6529,7 @@ int main() {
 
 应该是相机位置关于镜子做对称然后渲染一张图，可以利用glDistance做一个裁剪，只让在镜子上半部分的完成显示，类似于水流的模拟。
 
-![image-20231129194313376](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231129194313376.png?lastModify=1704433571)
+![image-20231129194313376](C++.assets/image-20231129194313376.png?lastModify=1704433571)
 
 - **现在给定一个模型，这个模型是由几十万个三角片元组成的，现在要实现一个三角形拾取的功能，鼠标点这个模型上的某个三角面，然后要高亮它，怎么做？**
 
@@ -6668,7 +6817,7 @@ X = - 0b11(-3) ，四比特表示原码 = 1011(11)，对应反码为 = 1100(12)�
 
 **正十进制数补码等于其本身，n位寄存器下-X的补码等于**2^n-X对应的二进制编码。
 
-![image-20231217162150092](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231217162150092.png?lastModify=1704433571)
+![image-20231217162150092](C++.assets/image-20231217162150092.png?lastModify=1704433571)
 
 
 
@@ -6776,7 +6925,7 @@ X = - 0b11(-3) ，四比特表示原码 = 1011(11)，对应反码为 = 1100(12)�
 
 **偏导计算** 在三角形光栅化是，GPU 都是 block 片段来计算光栅化的。偏导计算于是由这block之间的片段的值来计算的；dFdx 计算并返回的是右边的片段减去左边的片段的值，而 dFdy 是有上减去下的值。查看下图的格式显示的就 block 中对应的 (x, y) 屏幕坐标上的片段。
 
-![image-20231208182344966](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231208182344966.png?lastModify=1704433571)
+![image-20231208182344966](C++.assets/image-20231208182344966.png?lastModify=1704433571)
 
 
 
@@ -6847,7 +6996,7 @@ float d = _hizBuffer.mips[lod][int2(uv)].r;
 
 3. **BRDF漫反射项的常数项怎么确定的？(f_d)**
 
-   ![image-20231213193147837](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231213193147837.png?lastModify=1704433571)
+   ![image-20231213193147837](C++.assets/image-20231213193147837.png?lastModify=1704433571)
 
 4. **F0的确定，非金属为什么是是0.04？**
 
@@ -6862,11 +7011,11 @@ float d = _hizBuffer.mips[lod][int2(uv)].r;
 
    - D：表示的是微表面结构中法线分布函数，它描述了光线以多大的概率在不同方向上的散射。业界常用的法线分布函数是GGX，具有更好的高光长尾
 
-   ![image-20231212153920593](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212153920593.png?lastModify=1704433571)
+   ![image-20231212153920593](C++.assets/image-20231212153920593.png?lastModify=1704433571)
 
    - F：菲涅尔项，表示的是光线在材质表面与介质之间的反射和折射的行为，掠视金属时反射较多的光而俯视时反射光较少
 
-   ![image-20231212154008402](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231212154008402.png?lastModify=1704433571)
+   ![image-20231212154008402](C++.assets/image-20231212154008402.png?lastModify=1704433571)
 
    - G：表示的是几何遮蔽的情况，返回一个未被遮蔽的表面的百分比，常用GGX模型，通过史密斯法叠加入射和出射两个方向。
 
@@ -6885,7 +7034,7 @@ float d = _hizBuffer.mips[lod][int2(uv)].r;
 
    绿色的opengl线性分布，蓝色的是unity中的分布，unity中的更加合理。
 
-   ![image-20231213204822257](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231213204822257.png?lastModify=1704433571)
+   ![image-20231213204822257](C++.assets/image-20231213204822257.png?lastModify=1704433571)
 
 8. **CSM原理**
 
@@ -6970,7 +7119,7 @@ float d = _hizBuffer.mips[lod][int2(uv)].r;
 
 
 
-![image-20231218180234388](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231218180234388.png?lastModify=1704433571)
+![image-20231218180234388](C++.assets/image-20231218180234388.png?lastModify=1704433571)
 
 - **图形**
 
@@ -7147,7 +7296,7 @@ Image-Based Lighting (IBL)对Physically Based Rendering (PBR)的贡献主要包�
 
    高斯方程有个非常巧妙的特性，它允许我们把二维方程分解为两个更小的方程：一个描述水平权重，另一个描述垂直权重。我们首先用水平权重在整个纹理上进行水平模糊，然后在经改变的纹理上进行垂直模糊。
 
-   ![image-20240105200738394](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240105200738394.png?lastModify=1704433571)
+   ![image-20240105200738394](C++.assets/image-20240105200738394.png?lastModify=1704433571)
 
    二维高斯函数可以拆分成两个一维高斯函数，是因为二维高斯函数的特殊性质——可分离性(separability)。
 
@@ -7309,13 +7458,13 @@ BVH是一种用于加速碰撞检测和可见性剔除的空间划分数据结�
 
 挖草！根据三角形关系直接求了，没有必要反投影！
 
-![image-20231226154142757](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231226154142757.png?lastModify=1704433571)
+![image-20231226154142757](C++.assets/image-20231226154142757.png?lastModify=1704433571)
 
 其中P点就要求的点，Q点就是映射到近平面的点。现在已知的信息是P点的深度，读取深度缓存的UV坐标，FOV角，近平面(n)和远平面(f)的值，以及屏幕宽高。接下来就用上面的值进行推导。
 
-![image-20231226155123366](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231226155123366.png?lastModify=1704433571)
+![image-20231226155123366](C++.assets/image-20231226155123366.png?lastModify=1704433571)
 
-![image-20231226155143106](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20231226155143106.png?lastModify=1704433571)
+![image-20231226155143106](C++.assets/image-20231226155143106.png?lastModify=1704433571)
 
 - **后处理-举例子**
 - **剔除、遮挡剔除怎么实现？**
@@ -7331,7 +7480,7 @@ BVH是一种用于加速碰撞检测和可见性剔除的空间划分数据结�
 
 **假如我们将视锥分成N份(通常为1-4，也有推崇大力出奇迹理念给到8的，比如原神)，那么理想的分割距离** 
 
-![image-20240105195013711](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240105195013711.png?lastModify=1704433571)
+![image-20240105195013711](C++.assets/image-20240105195013711.png?lastModify=1704433571)
 
 以上是一种理论上的理想分割，在场景物体从近到远分布均匀的情况下才有比较好的表现。但在实际应用中，是很少出现以上理想情况的。
 
@@ -7339,7 +7488,7 @@ BVH是一种用于加速碰撞检测和可见性剔除的空间划分数据结�
 
 因此在实际应用中，通常会与线性分割进行一个结合，公式如下:
 
-![image-20240105195054625](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240105195054625.png?lastModify=1704433571)
+![image-20240105195054625](C++.assets/image-20240105195054625.png?lastModify=1704433571)
 
 
 
@@ -7373,7 +7522,7 @@ BVH是一种用于加速碰撞检测和可见性剔除的空间划分数据结�
 
 高斯方程有个非常巧妙的特性，它允许我们把二维方程分解为两个更小的方程：一个描述水平权重，另一个描述垂直权重。我们首先用水平权重在整个纹理上进行水平模糊，然后在经改变的纹理上进行垂直模糊。
 
-![image-20240105200738394](file://C:/Users/zhang/Desktop/Pre/-/C++.assets/image-20240105200738394.png?lastModify=1704433571)
+![image-20240105200738394](C++.assets/image-20240105200738394.png?lastModify=1704433571)
 
 二维高斯函数可以拆分成两个一维高斯函数，是因为二维高斯函数的特殊性质——可分离性(separability)。
 
